@@ -1,0 +1,13 @@
+latex fulano_tese.tex
+bibtex fulano_tese
+latex fulano_tese.tex
+latex fulano_tese.tex
+
+% Conversão de dvi para ps
+dvips -Ppdf -G0 -tletter fulano_tese.dvi
+
+% Conversão de ps para pdf
+ps2pdf fulano_tese.ps
+
+% Opcionalmente esse último passo pode ser feito dentro do próprio ghostview (visualizador de ps).
+% Ir em File / Convert, escolher pdfwrite no campo device. Resolution pode ser 600.

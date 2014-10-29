@@ -1,0 +1,367 @@
+% This file was created with JabRef 2.8.
+% Encoding: UTF8
+
+@ARTICLE{aguilera00,
+  author = {Marcos Kawazoe Aguilera and Wei Chen and Sam Toueg},
+  title = {Failure detection and consensus in the crash-recovery model},
+  journal = {Distrib. Comput.},
+  year = {2000},
+  volume = {13},
+  pages = {99--125},
+  number = {2},
+  address = {London, UK},
+  doi = {10.1007/s004460050070},
+  file = {aguilera00.pdf:artigos/aguilera00.pdf:PDF},
+  issn = {0178-2770},
+  keywords = {consensus, crash-recovery, failure detector},
+  owner = {gdvieira},
+  publisher = {Springer-Verlag},
+  review = {This paper describes two consensus algorithms for the crash-recover
+	failure model. One requires stable memory, the other doesn't.},
+  timestamp = {2006.10.20}
+}
+
+@INPROCEEDINGS{burrows06,
+  author = {Mike Burrows},
+  title = {The {C}hubby lock service for loosely-coupled distributed systems},
+  booktitle = {OSDI '06: 7th USENIX Symposium on Operating Systems Design and Implementation},
+  year = {2006},
+  file = {burrows06.pdf:artigos/burrows06.pdf:PDF},
+  keywords = {active replication, implementation},
+  owner = {gdvieira},
+  review = {This paper describes the Chubby lock service used internally by Google.
+	This service is build on top of Paxos based replicated database.
+	The paper highlights several aspects of a real-life distributed system
+	in practice (using locks as main abstraction) and is very informative,
+	but touches only briefly in concerns related to replication and consensus.},
+  timestamp = {2007.03.06},
+  url = {http://www.usenix.org/events/osdi06/tech/burrows.html}
+}
+
+@INPROCEEDINGS{chandra07,
+  author = {Tushar D. Chandra and Robert Griesemer and Joshua Redstone},
+  title = {{P}axos made live: an engineering perspective},
+  booktitle = {PODC '07: Proceedings of the twenty-sixth annual ACM symposium on
+	Principles of distributed computing},
+  year = {2007},
+  pages = {398--407},
+  address = {New York, NY, USA},
+  publisher = {ACM Press},
+  doi = {10.1145/1281100.1281103},
+  file = {chandra07.pdf:artigos/chandra07.pdf:PDF},
+  isbn = {978-1-59593-616-5},
+  keywords = {paxos, active replication, implementation},
+  location = {Portland, Oregon, USA},
+  owner = {gdvieira},
+  review = {This paper describes some details of the Paxos implementation used
+	for the Chubby lock system. It describes a distributed database much
+	like the one we are trying to create, but it is specific to the lock
+	managent required by Google applications.},
+  timestamp = {2007.09.14}
+}
+
+@ARTICLE{hupfeld08b,
+  author = {Hupfeld, Felix and Cortes, Toni and Kolbeck, Bj\"{o}rn and Stender,
+	Jan and Focht, Erich and Hess, Matthias and Malo, Jesus and Marti,
+	Jonathan and Cesario, Eugenio},
+  title = {The {XtreemFS} architecture---a case for object-based file systems
+	in Grids},
+  journal = {Concurr. Comput. : Pract. Exper.},
+  year = {2008},
+  volume = {20},
+  pages = {2049--2060},
+  number = {17},
+  address = {Chichester, UK},
+  doi = {10.1002/cpe.1304},
+  file = {hupfeld08b.pdf:artigos/hupfeld08b.pdf:PDF},
+  issn = {1532-0626},
+  keywords = {**LER**, distributed filesystem, middleware, implementation},
+  owner = {gdvieira},
+  publisher = {John Wiley and Sons Ltd.},
+  timestamp = {2010.04.20}
+}
+
+@ARTICLE{lamport06a,
+  author = {Leslie Lamport},
+  title = {Fast {P}axos},
+  journal = {Distrib. Comput.},
+  year = {2006},
+  volume = {19},
+  pages = {79--103},
+  number = {2},
+  month = oct,
+  address = {London, UK},
+  doi = {10.1007/s00446-006-0005-x},
+  file = {lamport06a.pdf:artigos/lamport06a.pdf:PDF},
+  issn = {0178-2770},
+  keywords = {paxos, consensus},
+  owner = {gdvieira},
+  publisher = {Springer-Verlag},
+  timestamp = {2007.02.27}
+}
+
+@ARTICLE{lamport98,
+  author = {Leslie Lamport},
+  title = {The part-time parliament},
+  journal = {ACM Trans. Comput. Syst.},
+  year = {1998},
+  volume = {16},
+  pages = {133--169},
+  number = {2},
+  address = {New York, NY, USA},
+  doi = {10.1145/279227.279229},
+  file = {lamport98.pdf:artigos/lamport98.pdf:PDF},
+  issn = {0734-2071},
+  keywords = {consensus, crash-recovery, paxos},
+  owner = {gdvieira},
+  publisher = {ACM Press},
+  timestamp = {2006.11.14}
+}
+
+@ARTICLE{lamport10,
+  author = {Lamport, Leslie and Malkhi, Dahlia and Zhou, Lidong},
+  title = {Reconfiguring a state machine},
+  journal = {SIGACT News},
+  year = {2010},
+  volume = {41},
+  pages = {63--73},
+  number = {1},
+  month = mar,
+  acmid = {1753191},
+  address = {New York, NY, USA},
+  doi = {10.1145/1753171.1753191},
+  file = {lamport10.pdf:artigos/lamport10.pdf:PDF},
+  issn = {0163-5700},
+  issue_date = {March 2010},
+  keywords = {**LER**, paxos, reconfiguration, active replication},
+  numpages = {11},
+  owner = {gdvieira},
+  publisher = {ACM},
+  timestamp = {2013.04.24}
+}
+
+@INPROCEEDINGS{lampson96,
+  author = {Butler W. Lampson},
+  title = {How to Build a Highly Available System Using Consensus},
+  booktitle = {WDAG '96: Proceedings of the 10th International Workshop on Distributed
+	Algorithms},
+  year = {1996},
+  pages = {1--17},
+  address = {London, UK},
+  publisher = {Springer-Verlag},
+  file = {lampson96.pdf:artigos/lampson96.pdf:PDF},
+  isbn = {3-540-61769-8},
+  keywords = {paxos},
+  owner = {gdvieira},
+  timestamp = {2006.11.14},
+  url = {https://research.microsoft.com/~lampson/58-Consensus/WebPage.html}
+}
+
+@INPROCEEDINGS{maccormick04,
+  author = {John MacCormick and Nick Murphy and Marc Najork and Chandramohan
+	A. Thekkath and Lidong Zhou},
+  title = {{B}oxwood: Abstractions as the Foundation for Storage Infrastructure},
+  booktitle = {OSDI '04: 6th USENIX Symposium on Operating Systems Design and Implementation},
+  year = {2004},
+  file = {maccormick04.pdf:artigos/maccormick04.pdf:PDF},
+  keywords = {active replication, implementation, paxos},
+  owner = {gdvieira},
+  review = {This paper describes the Boxwood framework for construction of distributed
+	file systems. It has two interesting aspects: 1) it proposes the
+	use of simple abstraction as a way of building more complex distributed
+	systems. 2) one of these abstractions is a Paxos based replicated
+	state, used to guarantee consistency of the other abstractions, but
+	used as sparsely as possible, to isolate the scalability requirements.},
+  timestamp = {2007.03.06},
+  url = {https://db.usenix.org/events/osdi04/tech/maccormick.html}
+}
+
+@INPROCEEDINGS{marandi10,
+  author = {Parisa Jalili Marandi and Marco Primi and Nicolas Schiper and Fernando
+	Pedone},
+  title = {{Ring Paxos}: A high-throughput atomic broadcast protocol},
+  booktitle = {DSN 2010: 40th IEEE/IFIP International Conference on Dependable Systems
+	and Networks},
+  year = {2010},
+  pages = {527--536},
+  address = {Chicago, USA},
+  month = jun,
+  doi = {10.1109/DSN.2010.5544272},
+  file = {marandi10.pdf:artigos/marandi10.pdf:PDF},
+  keywords = {**LER**},
+  owner = {gdvieira},
+  timestamp = {2010.10.26}
+}
+
+@ARTICLE{schneider90,
+  author = {Fred B. Schneider},
+  title = {Implementing fault-tolerant services using the state machine approach:
+	a tutorial},
+  journal = {ACM Comput. Surv.},
+  year = {1990},
+  volume = {22},
+  pages = {299--319},
+  number = {4},
+  address = {New York, NY, USA},
+  doi = {10.1145/98163.98167},
+  file = {schneider90.pdf:artigos/schneider90.pdf:PDF},
+  issn = {0360-0300},
+  keywords = {active replication},
+  owner = {gdvieira},
+  publisher = {ACM Press},
+  review = {Very good survey about the state machine approach or active replication.
+	Very interestiong discussion of client fault tolerance.},
+  timestamp = {2007.02.22}
+}
+
+@MANUAL{tpc02,
+  title = {{TPC} Benchmark {W} Specification},
+  author = {{TPC}},
+  month = feb,
+  year = {2002},
+  institution = {Transaction Processing Performance Council},
+  owner = {gdvieira},
+  timestamp = {2007.04.09},
+  url = {http://www.tpc.org/tpcw/spec/tpcw_V1.8.pdf}
+}
+
+@TECHREPORT{vieira-tr10b,
+  author = {Vieira, Gustavo Maciel Dias and Buzato,Luiz Eduardo},
+  title = {Implementation of an Object-Oriented Specification for Active Replication
+	Using Consensus},
+  institution = {Institute of Computing, University of Campinas},
+  year = {2010},
+  number = {IC-10-26},
+  month = aug,
+  file = {vieira-tr10b.pdf:artigos/vieira-tr10b.pdf:PDF},
+  keywords = {active replication, middleware, paxos, implementation, persistent
+	queues},
+  owner = {gdvieira},
+  timestamp = {2010.08.25},
+  url = {http://www.ic.unicamp.br/~reltech/2010/abstracts.html}
+}
+
+@INPROCEEDINGS{vieira09,
+  author = {Vieira, Gustavo Maciel Dias and Buzato, Luiz Eduardo},
+  title = {The Performance of {P}axos and {F}ast {P}axos},
+  booktitle = {SBRC '09: Proc. of the 27th Brazilian Symposium on Computer Networks
+	and Distributed Systems},
+  year = {2009},
+  pages = {291--304},
+  address = {Recife, Brasil},
+  month = may,
+  file = {vieira09.pdf:artigos/vieira09.pdf:PDF},
+  keywords = {paxos, performance},
+  owner = {gdvieira},
+  timestamp = {2010.02.09},
+  url = {http://www.ic.unicamp.br/~gdvieira/publications/}
+}
+
+@INPROCEEDINGS{vieira08a,
+  author = {Gustavo Maciel Dias Vieira and Luiz Eduardo Buzato},
+  title = {{T}replica: Ubiquitous replication},
+  booktitle = {SBRC '08: Proc. of the 26th Brazilian Symposium on Computer Networks
+	and Distributed Systems},
+  year = {2008},
+  address = {Rio de Janeiro, Brasil},
+  month = may,
+  file = {vieira08a.pdf:artigos/vieira08a.pdf:PDF},
+  keywords = {persistent queues, active replication, paxos, middleware},
+  owner = {gdvieira},
+  timestamp = {2008.12.05},
+  url = {http://www.lbd.dcc.ufmg.br/bdbcomp/servlet/Trabalho?id=7450}
+}
+
+@ARTICLE{chandra96,
+  author = {Tushar Deepak Chandra and Sam Toueg},
+  title = {Unreliable failure detectors for reliable distributed systems},
+  journal = {J. ACM},
+  year = {1996},
+  volume = {43},
+  pages = {225--267},
+  number = {2},
+  address = {New York, NY, USA},
+  doi = {10.1145/226643.226647},
+  file = {chandra96.pdf:artigos/chandra96.pdf:PDF},
+  issn = {0004-5411},
+  keywords = {failure detector, consensus, total order},
+  owner = {gdvieira},
+  publisher = {ACM Press},
+  review = {Introduces failure detectors and shows a consensus algorithm that
+	uses failure detectors and a total order broadcast algorithm using
+	the consensus algorithm.},
+  timestamp = {2007.02.26}
+}
+
+@BOOK{birman05,
+  author = {Birman, Kenneth P.},
+  title = {Reliable Distributed Systems: Technologies, Web Services, and Applications},
+  publisher = {Springer},
+  year = {2005}
+}
+
+@BOOK{cachin11,
+  author = {Cachin, Cristian and Guerraoui, Rachid and Rodrigues, Luiz},
+  title = {Introduction to Reliable and Secure Distributed Programming},
+  publisher = {Springer},
+  year = {2011},
+  edition = {Second}
+}
+
+@BOOK{tanenbaum07,
+  author = {Tanenbaum, Andrew S. and Van Steen, Maarten},
+  title = {Distribuited system: principles and paradigms},
+  publisher = {Pearson},
+  year = {2007},
+  edition = {Second}
+}
+
+@ARTICLE{barborak93,
+  author = {Barborak, M. and Dahbura, A. and Malek, M.},
+  title = {The consensus problem in fault-tolerant computing},
+  journal = {IEEE Computer Society},
+  year = {1993},
+  pages = {140}
+}
+
+@ARTICLE{birrel87,
+  author = {Birrell, A. D. and Jones, M. B. and Wobber, E. P.},
+  title = {A simple and efficient implementation of a small database},
+  journal = {IEEE Computer Society},
+  year = {1987},
+  pages = {149-154}
+}
+
+@ARTICLE{birman93,
+  author = {Birman, Kenneth P.},
+  title = {The process group approach to reliable distributed computing},
+  journal = {Communications of the ACM},
+  year = {1993},
+  pages = {37-53},
+  volume = {36},
+  number = {12}
+}
+
+@ARTICLE{cristian86,
+  author = {Cristian, F. and Aghili, H. and Strong, R.},
+  title = {Clock syncronization in the presence of omissions and performance faults, and processor joins},
+  journal = {16th International Symposium on Fault Tolerant Computing Systems},
+  year = {1986}
+}
+
+@BOOK{jalote94,
+  author = {Jalote, P.},
+  title = {Fault tolerance in distributed system},
+  publisher = {Communications of the ACM},
+  year = {1994}
+}
+
+@ARTICLE{cristian91,
+  author = {Cristian, F.},
+  title = {Understanding fault-tolerant distributed system},
+  journal = {16th International Symposium on Fault Tolerant Computing Systems},
+  year = {1991},
+  pages = {56-78},
+  volume = {34},
+  number = {2}
+}

@@ -1,0 +1,123 @@
+\chapter{Treplica Reconfigurável}\label{cap2}
+
+Descrever a proposta e sua implementação.
+
+
+\section{Visão arquitetural de Treplica}
+
+Introdução da arquitetura de treplica
+
+\subsection{Componentes de suporte}
+
+Comentar sobre a abstração dos componentes de suporte
+
+\subsubsection{Transport}
+
+\subsubsection{Change Log}
+
+\subsubsection{Ledger}
+
+Ledger é a abstração do estado persistente para implementação de Paxos. É uma estrutura de
+dados comum, compartilhada por todos os agentes de Paxos, implementados por Treplica, que
+conseguem através de uma interface acessar a memória principal. A implementação dessa
+interface suporta persistência dos dados de forma não-volátil. Conforme definido no
+\autoref{cap1:replicacao_ativa_paxos}, é possível obter o mesmo estado replicado a partir
+das instâncias de consenso armazenadas em memória persistente. Assim, a abstração do
+Ledger concentra todos os dados de uma instância de consenso bem sucedido em memória
+persistente, facilmente acessível a partir da memória principal. A classe LoggingLedger é
+o objeto utilizado para persistir em log (disco) as alterações. Para simplificar o uso de
+log de alterações, esta implementação tem suporte para detectar e isolar as alterações
+feitas em seu estado interno. Pode gravar mudanças no estado e depois recuperá-la,
+reaplicando um conjunto de alterações previamente gravados. O Ledger armazena o estado
+completo de cada instância do consenso por réplica, mantendo todos os dados exigidos por
+todos os tipos de agentes de Paxos implementados por Treplica. Dessa forma, é possível que
+qualquer agente recupere seu estado, inclusive o coordenador.
+
+\subsubsection{Secretary}
+
+Secretary apresenta uma abstração unificada de I/O para os agentes de Paxos. Este
+componente utiliza memória persistente usando \emph{change log} e o Ledger, lida com a
+passagem de mensagens usando o componente de transporte e lida também com a fila de
+objetos utilizada para entregar objetos para a aplicação. A principal razão para criação
+dessa abstração em Treplica foi sintetizar as operações de I/O em \emph{threads}
+diferentes das que executam as operações de Paxos. Operações de I/O em disco, tem grande
+potencial para reduzir o desempenho do algoritmo Paxos por duas razões: (1) todas as
+requisições de escrita que estabeleceram consenso, devem ser persistidas de forma
+não-volátil antes do progresso do algoritmo. Premissa para garantir consistência; (2)
+alguns passos do algoritmo de Paxos podem demandar muito acesso a memória persistente.
+Considerando que cada operação de escrita em disco leva cerca de $1ms$ para ser concluída
+e que uma rodada de Paxos, pelo menos, requer duas escritas em memória estável, acabamos
+de adicionar uma latência de $2ms$ em todas as rodadas de consenso.
+
+Uma vez que o I/O é tratado apenas pelo Secretary de forma assíncrona é possível resolver
+o problema de falta de paralelismo entre as rodadas. Isso é feito através de uma fila de
+agrupamento de gravações lógicas distintas que retém os dados realizar uma única gravação
+física. Essa abordagem é vantajosa porque o tamanho dos dados de escrita no disco, utiliza
+uma \emph{sync() system call} causando um pouco latência na operação. A implementação d
+de Scretary absorve latência da \emph{system call} mantendo uma \emph{thread} separada
+para persistência dos dados.
+
+\subsubsection{Router}
+
+Router é um componente simples, mas vital para PaxosPersistentQueue, porque inicia todos
+os agentes em conjunto. Sua função principal é prover o \emph{main loop} da implementação
+de Paxos, que recebe mensagens do componente de transporte e, de acordo com seu tipo,
+encaminha para o agente apropriado. Dessa forma, a execução desse agente é sequencial e
+compartilha estruturas de dados, como o Ledger, não precisa de controle de concorrência.
+
+Esse é o único componente (\emph{thread}) que monitora o temporizador central e gera
+eventos de \emph{timer} \footnote{Os eventos de \emph{timer} simbolizam a passagem do
+tempo para a aplicação. Esse evento atinge todos os componentes que necessitam de um
+relógio para seu correto funcionamento}. O código de processamento dos agentes não possuem
+operações que geram grandes bloqueios, eles são programados como simples manipuladores de
+eventos caracterizando uma arquitetura de processamento assíncrono baseada em eventos
+(\emph{event-based}). É responsabilidade do Router instanciar agentes e componentes de
+apoio e, também, inicializar a PaxosPersistentQueue.
+
+
+\subsection{Componentes de Paxos}
+
+Falar sobre a abstração dos componentes de Paxos
+
+\subsubsection{Election}
+
+\subsubsection{Learner}
+
+\subsubsection{Coordinator}
+
+Coordenador (\emph{coordinator}) é o agente responsável por conduzir a rodada de consenso.
+Ele é capaz de decidir, através da aplicação de uma regra local, se uma rodada foi bem
+sucedida ou não. A regra local do coordenador é baseada em quóruns de \emph{receptores} e
+exige que pelo menos $\lfloor n/2 \rfloor + 1$ receptores façam parte de uma rodada, onde
+$n$ é o número total de receptores na aplicação \cite{lamport98}.
+
+É permitido a existência de apenas um coordenador por rodada, em caso de falha na réplica
+que executa o agente coordenador, uma eleição de líder deve ser convocada para estabelecer
+que uma réplica correta execute o agente coordenador. Como o algoritmo é executado no
+modelo computacional falha-e-recuperação, a réplica defeituosa pode voltar a computação
+acreditando que ainda é o coordenador. Nesse caso, uma nova eleição de líder deve ser
+convocada novamente para restabelecer a unicidade de coordenador por rodada.
+
+\subsubsection{Proposer}
+
+Proponente (\emph{proposer}) são agentes capazes de propor valores. Os proponentes podem
+propor dois valores diferentes concorrentemente (condição de concorrência)
+\footnote{Também conhecida como condição de corrida, acontece quando diferentes processos
+em execução atuam sobre um estado compartilhado \cite{alguem}}, nesse caso suas propostas
+podem colidir inviabilizando o sucesso de uma rodada de consenso. Em caso de colisões,
+diferentes mecanismos podem ser implementados, para lida com essa situação Treplica inicia
+uma nova rodada por intermédio do agente \emph{coordenador}.
+
+\subsubsection{Acceptor}
+
+
+\section{Alterações}
+
+\subsection{Alterações Propostas - Componente 1}
+
+...
+
+
+\subsection{Alterações Propostas - Componente n}
+
+...
