@@ -50,6 +50,7 @@ de falha e recuperação \cite{cachin11}.
 
 Essas réplicas trocam mensagens por um enlace de \emph{perda-justa}, que possui as
 seguintes propriedades \cite{cachin11}:
+
 \begin{itemize}
   \item Perda-justa: se um processo correto $p$ envia infinitas mensagens $m$ para um
     processo correto $q$, então $q$ entrega $m$ um número infinito de vezes;
@@ -67,10 +68,10 @@ modelo perda-justa, na ausência de falhas graves. É importante ressaltar que a
 que garante entrega de mensagens entre réplicas não é suportada pelo modelo de comunicação
 perda-justa. Essa propriedade é inerente ao algoritmo Paxos.
 
-As premissas definidas pelo modelo assíncrono são: 1) não existe limite a diferença de
-velocidade de processamento entre duas réplicas; 2) não existe limite para a latência de
-transferência de uma mensagem \cite{cachin11}. Então, podemos afirmar que não existe
-nenhuma suposição de sincronia entre réplicas baseado nessas propriedades.
+Relacionado ao modelo computacional assíncrono, as seguintes premissas são relevantes: 1)
+não existe limite a diferença de velocidade de processamento entre duas réplicas; 2) não
+existe limite para a latência de transferência de uma mensagem. Então, podemos afirmar que
+não existe nenhuma suposição de sincronia entre réplicas baseado nessas propriedades.
 
 \subsection{Tolerância a Falhas}
 
@@ -123,12 +124,12 @@ relação de inclusão é ilustrada na \autoref{fig:fault-classification} \cite{
 
 Projetamos sistemas distribuídos tolerantes a falhas para fornecer um serviço confiável e
 contínuo, apesar das falhas de alguns de seus componentes. Um mecanismo básico utilizado
-na construção é o detector de falhas, que a grosso modo, fornece algumas informações sobre
-as réplicas defeituosas. Em ambientes assíncronos, a informação de falha normalmente é
-dada através de uma lista de suspeitas, que nem sempre estão atualizadas ou corretas. Um
-detector de falhas pode levar um longo tempo para suspeitar de uma réplica que deixou de
-funcionar e pode erroneamente suspeitar de uma réplica correta, na prática isto pode ser
-devido à perda de mensagens e/ou atrasos \cite{chandra96, chen02}.
+na construção é o \emph{detector de falhas}, que a grosso modo, fornece algumas
+informações sobre as réplicas defeituosas. Em ambientes assíncronos, a informação de falha
+normalmente é dada através de uma lista de suspeitas, que nem sempre estão atualizadas ou
+corretas. Um detector de falhas pode levar um longo tempo para suspeitar de uma réplica
+que deixou de funcionar e pode erroneamente suspeitar de uma réplica correta, na prática
+isto pode ser devido à perda de mensagens e/ou atrasos \cite{chandra96, chen02}.
 
 
 \section{Modelo Operacional}
@@ -152,7 +153,6 @@ ativa. A função principal desempenhada por esse \emph{middleware} de replicaç
 gerenciar o estado da aplicação, executando as requisições dos clientes através de uma
 abstração de uma \emph{máquina de estados replicada} \cite{schneider90}. Essa abstração é
 implementada utilizando o algoritmo Paxos \cite{lamport98}.
-% Referência para as seções a frente?
 
 \begin{figure}[ht]
   \centering
@@ -224,13 +224,7 @@ mesma sequência de transições eles atingirão estados idênticos.
 Cada operação que altera o estado de uma réplica (requisição de escrita) é executada de
 maneira determinista no conjunto de réplicas, ou seja, todas as réplicas recebem e
 processam a mesma sequência de requisições, conforme ilustrado na
-\autoref{fig:write-replication}. A propagação das requisições de mudança no conjunto de
-réplicas garante a sincronização consistente global do estado, pois é replicando a
-atualização de estado sofrida por uma réplica em todas as outras réplicas que uma
-requisição de leitura pode ser executada localmente em qualquer réplica com a certeza do
-mesmo resultado. A \autoref{fig:read-replication} ilustra esse cenário, repare que não
-existe propagação da requisição para outras réplicas, a requisição e processada
-localmente.
+\autoref{fig:write-replication}.
 
 \begin{figure}[htbp]
   \centering
@@ -238,6 +232,13 @@ localmente.
   \caption{Requisição de escrita}
   \label{fig:write-replication}
 \end{figure}
+
+A propagação das requisições de mudança no conjunto de réplicas garante a sincronização
+consistente global do estado, pois é replicando a atualização de estado sofrida por uma
+réplica em todas as outras réplicas que uma requisição de leitura pode ser executada
+localmente em qualquer réplica com a certeza do mesmo resultado. A
+\autoref{fig:read-replication} ilustra esse cenário, repare que não existe propagação da
+requisição para outras réplicas, a requisição e processada localmente.
 
 \begin{figure}[htbp]
   \centering
@@ -282,8 +283,9 @@ nenhuma réplica irá divergir do das demais, mesmo na presença de falhas e de 
 assíncrono de processamento e canais de comunicação.
 
 Paxos emprega um conjunto de protocolos baseados em quórum para atualizar os dados
-replicados em um grupo e satisfaz a propriedade uniformidade dinâmica (?) associada à
-definição tradicional de consenso \cite{cachin11}.
+replicados em um grupo. O objetivo do algoritmo é coordenar as réplicas para que todas
+tenham o mesmo estado \cite{cachin11}. Para garantir o progresso e correção do algorítimo,
+as seguintes propriedades são destacadas:
 
 \begin{itemize}
   \item Validade Uniforme: se um processo decide $v$ então algum processo anteriormente
@@ -404,7 +406,7 @@ propriedades relacionadas a atualização de uma réplica desatualizada:
   \item Consistência: Uma réplica desatualizada $r$ volta a computação após $n$ rodadas de
     consenso, onde $n$ é um número arbitrariamente grande. Se $r$ aplicar as $n$ decisões
     de consenso sucessivamente atingirá o mesmo estado das demais réplicas.
-  \item Volatilidade do Estado: Se o número de rodadas de consenso $n$ muda em uma
+  \item Volatilidade do estado: Se o número de rodadas de consenso $n$ muda em uma
     velocidade maior que a réplica desatualizada $r$ consegue atualizar seu estado, $r$
     estará sempre desatualizada \cite{vilaca09}.
 \end{itemize}
@@ -422,13 +424,13 @@ completo o estado desatualizado por um atualizado, semelhante a ideia de um tran
 Para satisfazer as propriedades de consenso no modelo falha-e-recuperação assíncrono é
 preciso utilizar um mecanismo capaz de gravar dados de forma persistente (não-volátil).
 Dessa forma, após um período de instabilidade uma réplica é capaz de recuperar suas
-decisões de  consenso tomadas anteriormente para continuar participando corretamente do
+decisões de consenso tomadas anteriormente para continuar participando corretamente do
 protocolo. A cada fase do algoritmo acontecem dois acessos a disco, conforme ilustrado na
 \autoref{fig:fases-paxos-acesso-disco}
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=9cm]{conteudo/capitulos/figuras/paxos.dia.eps}
+  \includegraphics[width=9cm]{conteudo/capitulos/figuras/fases-paxos-acesso-disco.eps}
   \caption{Paxos}
   \label{fig:fases-paxos-acesso-disco}
 \end{figure}
@@ -437,8 +439,8 @@ protocolo. A cada fase do algoritmo acontecem dois acessos a disco, conforme ilu
   \item Na Fase 1, após receber um convite do coordenador para participar da rodada $r$,
     todo receptor que aceitou o convite, escreve $r$ em disco.
   \item Na Fase 2, toda a proposta $p$ que consegue estabelecer consenso em $r$ é
-    escrita em disco. Ao final de cada rodada, foi persistido em disco o par $(rodada,
-    decisão)$.
+    escrita em disco. Ao final de cada rodada, foi persistido em disco o par (rodada,
+    decisão).
 \end{itemize}
 
 Operações de persistência durável é custosa e tem grande potencial para reduzir o
@@ -586,8 +588,9 @@ aplicação podendo não participar das rodadas atuais de consenso.
 Então temos dois problemas em mãos: (1) alterar o numero de réplicas sem violar o
 progresso do algoritmo quando remover réplicas e a correção do algoritmo quando adicionar
 réplicas. Dessa forma prover uma capacidade elástica preservando a consistência de Paxos;
-(2) provisionar réplicas de forma que não comprometa o desempenho, tornando o algoritmo
-escalável
+(2) provisionar réplicas de forma que não comprometa o desempenho, aumentando o suporte
+aos picos de acesso, denominados \emph{flash crowds}, existentes na Internet
+\cite{tanenbaum07}.
 
 
 \section{Trabalhos Relacionados}\label{sec:trabalhos-relacionados}
@@ -621,5 +624,4 @@ consistência dos mesmos. Em comparação, a nossa proposta não exige um client
 que a torna mais indicada para aplicações em geral, especialmente no ambiente Web. Dessa
 forma, temos uma implementação de cache que também é transparente ao cliente que acessa a
 aplicação.
-
 
