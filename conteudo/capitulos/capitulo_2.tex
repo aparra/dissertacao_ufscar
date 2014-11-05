@@ -2,7 +2,6 @@
 
 Descrever a proposta e sua implementação.
 
-
 \section{Visão arquitetural de Treplica}
 
 Introdução da arquitetura de treplica
@@ -17,9 +16,9 @@ Comentar sobre a abstração dos componentes de suporte
 
 \subsubsection{Ledger}
 
-Ledger é a abstração do estado persistente para implementação de Paxos. É uma estrutura de
-dados comum, compartilhada por todos os agentes de Paxos, implementados por Treplica, que
-conseguem através de uma interface acessar a memória principal. A implementação dessa
+Ledger é a abstração do estado persistente para implementação de Paxos. É uma estrutura
+de dados comum, compartilhada por todos os agentes de Paxos, implementados por Treplica,
+que conseguem através de uma interface acessar a memória principal. A implementação dessa
 interface suporta persistência dos dados de forma não-volátil. Conforme definido no
 \autoref{cap1:replicacao_ativa_paxos}, é possível obter o mesmo estado replicado a partir
 das instâncias de consenso armazenadas em memória persistente. Assim, a abstração do
@@ -113,11 +112,115 @@ uma nova rodada por intermédio do agente \emph{coordenador}.
 
 \section{Alterações}
 
-\subsection{Alterações Propostas - Componente 1}
+Descrever o objetivo dessa secao
 
+\subsection{Paxos com Réplicas Leitoras}
+
+A ideia principal da abordagem proposta é utilizar réplicas que não participem do processo
+de decisão de instâncias de consenso. Isso é feito com a adoção de \emph{réplicas
+leitoras}, que são réplicas onde apenas parte dos agentes do algoritmo Paxos estão
+executando. Para maior clareza de exposição, quando necessário, chamaremos as réplicas
+contendo todos os agentes ativos de \emph{réplicas votantes}. Para suportar a adaptação
+elástica a novos perfis de desempenho, desenvolvemos um mecanismo para o
+\emph{provisionamento de réplicas} e uma \emph{política de reconfiguração}.
+
+\subsubsection{Réplicas Leitoras}
+
+Réplicas leitoras são réplicas onde apenas os agentes proponente e aprendiz estão
+executando. Dessa forma, do ponto de vista do conjunto de processos que implementam o
+algoritmo Paxos, uma réplica leitora é capaz apenas de propor operações a serem aplicadas
+no estado replicado e de aprender operações decididas pelo conjunto de receptores. Do
+ponto de vista do cliente da aplicação replicada um réplica leitora se comporta como uma
+réplica votante: ela atende requisições de qualquer tipo garantindo a execução atômica das
+mesmas.
+
+As réplicas leitoras não assumem um papel fundamental na execução do algoritmo Paxos, no
+entanto elas se integram de forma consistente com a operação das réplicas votantes por
+meio de suas funções fundamentais: propor e aprender requisições de escrita. As réplicas
+leitoras propõem novas requisições a serem executadas em nome de seus clientes através de
+seu agente proponente. O proponente encaminha a operação ao coordenador que por sua vez
+decide, em conjunto com os receptores, a ordem da mesma através de uma rodada de Paxos,
+como descrito no \autoref{cap1:replicacao_ativa_paxos}. Uma vez que a decisão é alcançada,
+a mesma é difundida para o resto do sistema. Nesse momento o agente aprendiz da réplica
+leitora toma conhecimento da decisão e atualiza o seu estado interno, sem a participação
+ativa do coordenador ou de qualquer receptor.
+
+Tanto o processo de proposta quanto o de aprendizado executado por uma réplica leitora
+devem usar as mesmas estratégias de implementação das réplicas votantes. Na verdade, em
+nossa implementação usando Treplica, as réplicas leitoras foram construídas a partir da
+separação modular dos agentes que implementam Paxos. Dessa forma, reutilizamos os mesmos
+componentes e por consequência essas réplicas são capazes de detectar e reenviar propostas
+perdidas, detectar e corrigir lacunas na sequência de instâncias de consenso, fazer
+controle de fluxo e de congestionamento, entre outras operações fundamentais para uma
+operação eficiente de Paxos \cite{vieira-tr10b}.
+
+Uma consequência importante do uso de réplicas leitoras é que essas réplicas,
+consistentemente com as funções que elas assumem no algoritmo Paxos, não precisam de
+memória persistente para sua operação. Isso se deve ao fato de que elas não executam as
+Fases 1 e 2 do algoritmo. Porém, pode ser interessante que essas réplicas registrem a
+proposta decidida de forma a não precisar realizar uma recuperação completa em caso de
+falha. Na nossa proposta de réplicas leitoras decidimos não fazer esse registro de forma a
+remover completamente a escrita em memória persistente do caminho crítico de execução. É
+interessante observar que a escrita eliminada ocorre somente quando a réplica leitora
+atualiza o seu estado de acordo com as propostas decididas pelos receptores das réplicas
+votantes. Dessa forma, as réplicas leitoras conseguem manter seu estado atualizado com as
+réplicas votantes com um custo mínimo. Elas também são capazes de processar requisições de
+escrita com um custo similar àquele gerado pelas réplicas votantes ao executar as mesmas
+requisições. Podemos argumentar que esse custo é menor, na medida que as réplicas leitoras
+aliviam as réplicas votantes do custo de manter as conexões abertas com os clientes. É
+concebível ainda uma configuração onde as réplicas votantes não entrem em contato com os
+clientes, sendo essa operação completamente delegada às replicas leitoras, conforme
+ilustra a \autoref{fig:replicas_votantes_protegidas}.
+
+\begin{figure}[ht]
+  \begin{center}
+    \includegraphics[width=14cm]{conteudo/capitulos/figuras/treplica.eps}
+  \end{center}
+  \caption{Núcleo de réplicas votantes}
+  \label{fig:nucleo_replicas_votantes}
+\end{figure}
+
+As réplicas leitoras funcionam então como uma espécie de cache \emph{write-through}
+distribuído. O estado replicado na memória destas réplicas permite atender diretamente as
+requisições de leitura dos clientes, enquanto as requisições de escrita são repassadas ao
+receptores. Podemos ver claramente que a taxa de acerto desse cache está diretamente
+ligada à proporção de operações de leitura geradas pelos clientes e que a vazão de
+operações de leitura tem o potencial de crescer linearmente com o número de réplicas
+leitoras disponíveis. A \autoref{fig:relacao_leitura_escrita} mostra a relação entre as
+operações de leitura e escrita.
+
+\begin{figure}[ht]
+  \begin{center}
+    \includegraphics[width=14cm]{conteudo/capitulos/figuras/treplica.eps}
+  \end{center}
+  \caption{Taxa de acerto do cache}
+  \label{fig:relacao_leitura_escrita}
+\end{figure}
+
+\subsubsection{Provisionamento de Réplicas Leitoras}
+
+É possível utilizar os mecanismos tradicionais de Treplica para provisionar uma nova
+réplica leitora. Em resumo, uma réplica que se integra ao sistema pela primeira vez ou
+após uma falha demorada deve recuperar o seu estado. Esse processo acontece através de um
+mecanismo de preenchimento de lacunas, que observa que não pode executar novas requisições
+de escrita sem antes executar as requisições anteriores \cite{vieira-tr10b}. Esse
+procedimento é voltado para reparar pequenas interrupções e não a recuperação do estado
+completo de uma réplica. Em particular, no caso de uma réplica leitora sem estado
+persistente, o tamanho dessa recuperação pode ser muito grande em termos do número de
+\emph{requisições} a serem reexecutadas, pois ela sempre parte do estado inicial vazio.
+
+Foi necessário então criar um procedimento de provisionamento de réplicas, de forma a
+permitir o rápido início de uma réplica leitora. Esse mecanismo não é necessariamente
+exclusivo de réplicas leitoras e pode ser aplicado a réplicas normais. Porém, neste
+primeiro momento, ele tira proveito do fato dessas réplicas não terem memória persistente.
+Em particular, a adição ou remoção de uma réplica leitora não altera o número de
+receptores executando o algoritmo, não havendo necessidade de se realizar um
+reconfiguração custosa \cite{lamport10}.
+
+\subsection{Protocolo para transferência de estado}
 ...
 
 
 \subsection{Alterações Propostas - Componente n}
 
-...
+:se...
