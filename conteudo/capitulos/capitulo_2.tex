@@ -170,14 +170,22 @@ requisições. Podemos argumentar que esse custo é menor, na medida que as rép
 aliviam as réplicas votantes do custo de manter as conexões abertas com os clientes. É
 concebível ainda uma configuração onde as réplicas votantes não entrem em contato com os
 clientes, sendo essa operação completamente delegada às replicas leitoras, conforme
-ilustra a \autoref{fig:replicas_votantes_protegidas}.
+ilustra a \autoref{fig:nucleo_replicas_votantes}.
 
 \begin{figure}[ht]
-  \begin{center}
-    \includegraphics[width=14cm]{conteudo/capitulos/figuras/treplica.eps}
-  \end{center}
+\centering
+\begin{minipage}[b]{0.45\linewidth}
+  \includegraphics{conteudo/capitulos/figuras/nucleo_replicas_votantes.eps}
+  \includegraphics...
   \caption{Núcleo de réplicas votantes}
   \label{fig:nucleo_replicas_votantes}
+\end{minipage}
+\quad
+\begin{minipage}[b]{0.45\linewidth}
+  \includegraphics{conteudo/capitulos/figuras/mix_replicas_leitoras_votantes.eps}
+  \caption{Mix com réplicas votante e leitoras}
+  \label{fig:mix_replicas_leitoras_votantes}
+\end{minipage}
 \end{figure}
 
 As réplicas leitoras funcionam então como uma espécie de cache \emph{write-through}
