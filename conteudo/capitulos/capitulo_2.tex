@@ -10,7 +10,7 @@ Introdução da arquitetura de treplica
 
 Comentar sobre a abstração dos componentes de suporte
 
-\subsubsection{Transport}
+\subsubsection{Transport}\label{subsec:transport}
 
 \subsubsection{Change Log}
 
@@ -32,7 +32,7 @@ completo de cada instância do consenso por réplica, mantendo todos os dados ex
 todos os tipos de agentes de Paxos implementados por Treplica. Dessa forma, é possível que
 qualquer agente recupere seu estado, inclusive o coordenador.
 
-\subsubsection{Secretary}
+\subsubsection{Secretary}\label{subsec:secretary}
 
 Secretary apresenta uma abstração unificada de I/O para os agentes de Paxos. Este
 componente utiliza memória persistente usando \emph{change log} e o Ledger, lida com a
@@ -110,7 +110,7 @@ uma nova rodada por intermédio do agente \emph{coordenador}.
 \subsubsection{Acceptor}
 
 
-\section{Alterações}
+\section{Alterações propostas}
 
 Descrever o objetivo dessa secao
 
@@ -167,25 +167,22 @@ votantes. Dessa forma, as réplicas leitoras conseguem manter seu estado atualiz
 réplicas votantes com um custo mínimo. Elas também são capazes de processar requisições de
 escrita com um custo similar àquele gerado pelas réplicas votantes ao executar as mesmas
 requisições. Podemos argumentar que esse custo é menor, na medida que as réplicas leitoras
-aliviam as réplicas votantes do custo de manter as conexões abertas com os clientes. É
-concebível ainda uma configuração onde as réplicas votantes não entrem em contato com os
-clientes, sendo essa operação completamente delegada às replicas leitoras, conforme
-ilustra a \autoref{fig:nucleo_replicas_votantes}.
+aliviam as réplicas votantes do custo de manter as conexões abertas com os clientes.
+
+Utilizando réplicas leitoras, podemos formar grupos de réplicas com diferentes graus de
+uso de memória persistente \cite{aguilera00}. Uma configuração simples seria mesclar
+réplicas votantes e leitoras formando um conjunto híbrido de réplicas transparente para o
+cliente, conforme ilustra a \autoref{fig:configuracao_replicas_leitoras} (a). É concebível
+ainda uma configuração onde as réplicas votantes não entrem em contato com os clientes,
+sendo essa operação completamente delegada às replicas leitoras, configuração ilustrada
+pela \autoref{fig:configuracao_replicas_leitoras} (b).
 
 \begin{figure}[ht]
-\centering
-\begin{minipage}[b]{0.45\linewidth}
-  \includegraphics{conteudo/capitulos/figuras/nucleo_replicas_votantes.eps}
-  \includegraphics...
-  \caption{Núcleo de réplicas votantes}
-  \label{fig:nucleo_replicas_votantes}
-\end{minipage}
-\quad
-\begin{minipage}[b]{0.45\linewidth}
-  \includegraphics{conteudo/capitulos/figuras/mix_replicas_leitoras_votantes.eps}
-  \caption{Mix com réplicas votante e leitoras}
-  \label{fig:mix_replicas_leitoras_votantes}
-\end{minipage}
+  \begin{center}
+    \includegraphics[width=16cm]{conteudo/capitulos/figuras/configuracao_replicas_leitoras.eps}
+  \end{center}
+  \caption{Configuração de Paxos com réplicas votantes e leitoras}
+  \label{fig:configuracao_replicas_leitoras}
 \end{figure}
 
 As réplicas leitoras funcionam então como uma espécie de cache \emph{write-through}
@@ -194,16 +191,37 @@ requisições de leitura dos clientes, enquanto as requisições de escrita são
 receptores. Podemos ver claramente que a taxa de acerto desse cache está diretamente
 ligada à proporção de operações de leitura geradas pelos clientes e que a vazão de
 operações de leitura tem o potencial de crescer linearmente com o número de réplicas
-leitoras disponíveis. A \autoref{fig:relacao_leitura_escrita} mostra a relação entre as
-operações de leitura e escrita.
+leitoras disponíveis.
 
-\begin{figure}[ht]
-  \begin{center}
-    \includegraphics[width=14cm]{conteudo/capitulos/figuras/treplica.eps}
-  \end{center}
-  \caption{Taxa de acerto do cache}
-  \label{fig:relacao_leitura_escrita}
-\end{figure}
+\subsubsection{Componentes alterados}
+
+\subsubsubsection{WeakSecretary}
+
+WeakSecretary apresenta uma abstração de I/O sem persistência de dados em disco. Esse
+componente é uma versão leve da classe Secretary (\autoref{subsec:secretary}), ele é
+utilizado pelos agentes de Paxos para o enviar de mensagens pela rede, através do
+intermédio do componente Transport (\autoref{subsec:transport}). Como as instâncias dessa
+classe trabalham com dados somente em memória, todos os dados armazenados são perdidos na
+presença de defeitos. No entanto, na ausência de falhas eliminamos a operação custosa de
+I/O em disco.
+
+Essa classe também é responsável por lidar com o Ledger e com a fila de objetos utilizada
+para entregar mensagens para a camada da aplicação. A principal razão para a criação dessa
+abstração em Treplica foi eliminar a operação de persistência em disco, gerando um
+componente volátil, capaz de oferecer as operações essenciais para o progresso do
+algoritmo sem o ônus da escrita em disco.
+
+\subsubsubsection{StrongSecretary}
+  - ChangeLog
+
+\subsubsubsection{PaxosReadonlyQueue}
+  - WeakSecretary
+
+\subsubsubsection{PaxosPersistenteQueue}
+  - Election
+  - Coordinator
+  - Acceptor
+  - StrongSecretary
 
 \subsubsection{Provisionamento de Réplicas Leitoras}
 
@@ -225,10 +243,104 @@ Em particular, a adição ou remoção de uma réplica leitora não altera o nú
 receptores executando o algoritmo, não havendo necessidade de se realizar um
 reconfiguração custosa \cite{lamport10}.
 
+
 \subsection{Protocolo para transferência de estado}
-...
+
+Para que a agregação de uma nova réplica seja produtiva, é preciso realizar a
+transferência completa de um estado inicial que deve ser clonado de outra réplica já
+ativa, votante ou leitora. Por questões de garantia de consistência, a transferência de
+estado é uma tarefa síncrona. A réplica leitora está apta a processar as requisições de
+leitura ou escrita somente após o recebimento do estado inicial. E, enquanto ela aguarda,
+essas requisições são ignoradas. A réplica que doará seu estado não deve processar nenhuma
+operação de escrita enquanto realiza a transferência de estado. Essa é uma atividade
+potencialmente custosa para o desempenho de Paxos, pois estamos bloqueando,
+temporariamente, a participação de uma réplica no processo de decisão de instâncias de
+consenso.
+
+Visando minimizar a degradação de desempenho causada pela necessidade de transferência de
+estado, criamos um protocolo simples e eficaz para reger a junção de novas réplicas
+leitoras à computação, conforme ilustrado na \autoref{fig:protocolo}. Durante o processo
+de transferência de estado, supomos que a réplica interessada em receber um novo estado é
+sempre uma réplica leitora e que a réplica que fornece esse estado pode ser tanto uma
+réplica leitora quanto votante. No restante da seção chamaremos essas réplicas de réplicas
+doadoras.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=11cm]{conteudo/capitulos/figuras/transferencia_estado.eps}
+  \caption{Protocolo de Transferência de Estado}
+  \label{fig:protocolo}
+\end{figure}
+
+Estabelecemos a premissa de que é responsabilidade da réplica leitora encontrar uma
+réplica disposta a transferir seu estado. A elegância do mecanismo de seleção de doador é
+herdada do Treplica: as réplicas conhecem somente seu próprio identificador de rede e
+podem alcançar todas as outras réplicas por uma primitiva simples de difusão. Quando
+iniciamos uma réplica leitora ela difunde uma mensagem (PredicateMessage) com o
+valor da última instância de consenso decidida. Essa mensagem é o início do protocolo de
+transferência de estado que explicitamente informa a existência de uma nova réplica
+tentando se juntar à computação e de que é preciso fornecer a ela um estado inicial.
+
+As réplicas que recebem a mensagem solicitando o estado são solidárias e tentam atender a
+essa requisição caso sua última instância decidida seja maior que a recebida no pedido de
+estado. Neste caso, elas enviam uma mensagem (ACKMessage) somente para o remetente
+do pedido de estado, com as informações sobre o seu estado atual (última instância de
+consenso e um indicador do tipo de réplica: leitora ou votante). Devido à restrição de
+sincronia de transferência de estado é preferível que a réplica leitora encontre outra
+réplica leitora para ser sua doadora de estado, tentando minimizar possíveis impactos na
+computação de Paxos.
+
+Estabelecemos o tempo máximo de 5 segundos para que a réplica leitora selecione uma
+réplica doadora e inicie a transferência de estado. Todas as respostas ao seu pedido de
+transferência de estado são armazenadas em memória, a espera de uma réplica doadora que
+satisfaça os requisitos para a doação de estado. Caso o tempo limite seja alcançado e no
+conjunto de possíveis doadoras não exista nenhuma réplica leitora, uma réplica votante
+será selecionada. Selecionar uma réplica votante para transferir estado pode impactar
+diretamente no desempenho da aplicação, porque essa máquina não participará da eleição do
+novo estado durante o período de transmissão. Em Paxos, a partir do momento em que a
+maioria dos receptores concordam com a alteração do estado, mais cedo ou mais tarde todas
+as réplicas chegarão a um consenso. A partir do momento que retiramos da computação uma
+réplica votante, a probabilidade de atingir consenso pela maioria diminui, podendo até
+impossibilitar o progresso do algoritmo.
+
+Dado que o estado de uma aplicação pode ser tão grande quanto a capacidade de memória de
+uma réplica e que todas as mensagens de Treplica são trocadas via protocolo UDP, optamos
+por aumentar a vazão da transferência de estado usando o protocolo TCP. Somente o estado é
+enviado via TCP, todas as outras mensagens utilizam a comunicação UDP nativa de Treplica.
+Sendo assim, a réplica leitora abre um \emph{socket} TCP e envia uma mensagem
+(GETMessage) para a réplica doadora com o endereço do \emph{socket} TCP para envio de
+estado. A réplica doadora bloqueia suas atividades, estabelece a conexão TCP com a réplica
+leitora e transfere seu estado.
+
+Assim que a transferência de estado é concluída, a conexão TCP entre as réplicas é
+finalizada, a réplica doadora volta para computação e a réplica leitora começa a processar
+as requisições encaminhadas pelos seus clientes. Caso todas as etapas do protocolo de
+transferência de estado não sejam concluídas em no máximo 10 segundos, a negociação de
+estado  é reiniciada até que se obtenha êxito e uma nova  réplica leitora seja adicionada
+ao sistema.
+
+\subsubsection{Componentes alterados}
+
+Descrever todos os componentes alterados para a utilização desse mecanismo
+
+\subsubsection{Política de Reconfiguração}
+
+O mecanismo descrito na seção anterior deve ser regido por uma política de criação e
+remoção de réplicas leitoras. A  motivação por trás da criação de réplicas leitoras é
+permitir que o sistema reaja de forma autônoma a picos de carga sem comprometer o
+desempenho do mesmo. No entanto, sem uma política cuidadosa de reconfiguração corre-se o
+risco de gastar muitos dos recursos do sistema no próprio processo de reconfiguração,
+anulando quaisquer ganhos advindos do acréscimo de novas réplicas leitoras.
+
+A política de reconfiguração deve, desta forma, ser um equilíbrio entre o custo de se
+instanciar uma nova réplica leitora e os ganhos de desempenho a serem auferidos após esta
+instanciação. O trabalho de especificação de parâmetros para esta política ainda está em
+seu estágio inicial, dependendo de estudos mais aprofundados para caracterizar os custos
+envolvidos.
+
 
 
 \subsection{Alterações Propostas - Componente n}
 
 :se...
+
