@@ -197,25 +197,49 @@ leitoras disponíveis.
 
 \subsubsubsection{WeakSecretary}
 
-WeakSecretary apresenta uma abstração de I/O sem persistência de dados em disco. Esse
-componente é uma versão leve da classe Secretary (\autoref{subsec:secretary}), ele é
-utilizado pelos agentes de Paxos para o enviar de mensagens pela rede, através do
-intermédio do componente Transport (\autoref{subsec:transport}). Como as instâncias dessa
-classe trabalham com dados somente em memória, todos os dados armazenados são perdidos na
-presença de defeitos. No entanto, na ausência de falhas eliminamos a operação custosa de
-I/O em disco.
+A classe \classname{WeakSecretary} apresenta uma abstração de I/O sem persistência de
+dados em disco. Esse componente é uma versão leve da classe \classname{Secretary}
+(\autoref{subsec:secretary}), ela é utilizada pelos agentes de Paxos para enviar mensagens
+pela rede, através do intermédio do componente \classname{Transport}
+(\autoref{subsec:transport}). Essa classe foi projetada para trabalhar com dados somente
+em memória, dessa forma todos os dados computados são perdidos na presença de defeitos na
+réplica. No entanto, na ausência de falhas nos beneficiamos da eliminação de uma operação
+custosa relacionada com I/O em disco.
 
-Essa classe também é responsável por lidar com o Ledger e com a fila de objetos utilizada
+\classname{WeakSecretary} também é responsável por lidar com o componente
+\classname{Ledger} (\autoref{subsec:ledger}) e com a fila de objetos utilizada
 para entregar mensagens para a camada da aplicação. A principal razão para a criação dessa
 abstração em Treplica foi eliminar a operação de persistência em disco, gerando um
 componente volátil, capaz de oferecer as operações essenciais para o progresso do
 algoritmo sem o ônus da escrita em disco.
 
-\subsubsubsection{StrongSecretary}
-  - ChangeLog
-
 \subsubsubsection{PaxosReadonlyQueue}
-  - WeakSecretary
+
+A classe \classname{PaxosReadonlyQueue} possui o mesmo objetivo da classe
+\classname{PaxosPersistenteQueue}, já existente na biblioteca Treplica: fornecer uma fila
+que será utilizada pelo protocolo Paxos. No entanto, as operações executadas por
+\classname{PaxosReadonlyQueue} são bem difrerentes:
+
+Com relação ao processamento das mensagens processadas por essa fila, supomos as seguintes
+propriedades:
+
+\begin{itemize}
+  \item Abdicar liderança: todas as mensagens relacionadas a eleição de líder não são
+    processadas, logo é eliminada qualquer possibilidade de uma réplica leitora se tornar
+    coordenadora de uma rodada de Paxos.
+  \item Inelegível ao voto: mensagens relacionadas a votação de uma proposta são
+    ignoradas. Dessa forma, réplicas leitoras não participam do processo de decisão de
+    consenso e não são essenciais para o progresso do algoritmo Paxos.
+  \item Aprendizado: todas as mensagens endereçadas ao componente \classname{Learner} são
+    processadas pela fila. Consequentemente, os mecanismos descobrir qual foi o consenso
+    de uma determinada rodada são habilitados.
+\end{itemize}
+
+O principal objetivo dessa classe é processar mensagens não relacionados com a decisão de
+consenso, dessa forma oferece um poder de manobra para direcionar
+
+Essa classe utiliza o componente \classname{WeakSecretary}
+
 
 \subsubsubsection{PaxosPersistenteQueue}
   - Election
