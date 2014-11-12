@@ -220,7 +220,7 @@ A classe \classname{PaxosReadonlyQueue} possui o mesmo objetivo da classe
 que será utilizada pelo protocolo Paxos. No entanto, as operações executadas por
 \classname{PaxosReadonlyQueue} são bem difrerentes:
 
-Com relação ao processamento das mensagens processadas por essa fila, supomos as seguintes
+Com relação ao processamento das mensagens postadas nessa fila, supomos as seguintes
 propriedades:
 
 \begin{itemize}
@@ -235,11 +235,31 @@ propriedades:
     de uma determinada rodada são habilitados.
 \end{itemize}
 
-O principal objetivo dessa classe é processar mensagens não relacionados com a decisão de
-consenso, dessa forma oferece um poder de manobra para direcionar
+O principal objetivo dessa classe é não participar das operações que exigem dados
+persistentes para garantir correção do algoritmo, oferecendo instâncias capazes de atuar
+parcialmente nas fases de Paxos. Essas instâncias oferecem um poder de manobra para
+aliviar a carga de processamento das réplicas votantes com relação a mensagens de
+leituras, podendo ser configuradas de tal forma que nenhuma mensagem de leitura seja
+processada por uma réplica votante. Avaliar e propor soluções para configuração do
+conjunto de réplicas não faz parte do escopo desse trabalho.
 
-Essa classe utiliza o componente \classname{WeakSecretary}
+Relacionado as mensagens destinadas ao estado da aplicação gerenciado pela biblioteca
+Treplica, as seguintes premissas devem ser respeitadas:
 
+\begin{itemize}
+  \item Mensagens quem alteram o estado (escrita): são resolvidas pelo aglomerado de
+    réplicas orquestrado pelo protocolo Paxos, porém réplicas que não possuem grau de
+    memória persistente não participam da decisão de consenso.
+  \item Mensagens que não alteram estado (leitura): são resolvidas localmente independente
+    do grau de memória da réplica.
+\end{itemize}
+
+Do ponto de vista de uma réplica votante, não é possível distinguir se a proposta é
+oriunda de uma réplica votante ou leitora. O mecanismo para configuração do grau de
+memória de uma réplica em Treplica atua de forma transparente junto com protocolo Paxos,
+respeitando a forte premissa: o número de réplicas leitoras nunca deve afetar o número de
+réplicas votantes. Sendo assim, podemos afirmar que o progresso e a correção do algoritmo
+não são violados.
 
 \subsubsubsection{PaxosPersistenteQueue}
   - Election
