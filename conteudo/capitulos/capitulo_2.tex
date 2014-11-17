@@ -173,7 +173,7 @@ Utilizando réplicas leitoras, podemos formar grupos de réplicas com diferentes
 uso de memória persistente \cite{aguilera00}. Uma configuração simples seria mesclar
 réplicas votantes e leitoras formando um conjunto híbrido de réplicas transparente para o
 cliente, conforme ilustra a \autoref{fig:configuracao_replicas_leitoras} (a). É concebível
-ainda uma configuração onde as réplicas votantes não entrem em contato com os clientes,
+ainda uma configuração onde as réplicas votantes não entram em contato com os clientes,
 sendo essa operação completamente delegada às replicas leitoras, configuração ilustrada
 pela \autoref{fig:configuracao_replicas_leitoras} (b).
 
@@ -195,6 +195,80 @@ leitoras disponíveis.
 
 \subsubsection{Componentes alterados}
 
+Antes de detalharmos as alterações realizadas, vamos recapitular de forma resumida a
+iteração entre os agentes de Paxos: proponentes enviam a sua proposta para o coordenador
+que tenta alcançar consenso sobre a proposta em uma rodada, sendo que cada proposta
+corresponde a uma ou mais requisições de escrita da aplicação sendo replicada.
+
+Anteriormente, era possível uma única configuração de réplicas que empregava todos os
+agentes de Paxos utilizando memória persistente. A nova funcionalidade de réplicas
+leitoras foi implementada através de uma segregação modular dos agentes utilizados por uma
+réplica votante:
+
+\begin{itemize}
+  \item Proponente: agente capaz de propor valores;
+  \item Receptor: agente que vota em uma única proposta por rodada;
+  \item Aprendiz: agente que aprende a decisão de consenso;
+  \item Coordenador: agente responsável por garantir o funcionamento do algoritmo a cada
+    rodada de consenso executada.
+\end{itemize}
+
+A classe denominada \classname{PaxosPersistentQueue} é responsável por implementar o
+agrupamento de todos esses agentes, caracterizando assim uma réplica votante. Podemos
+definir, do ponto de vista de uma Máquina Virtual Java (JVM), que uam réplica votante
+possui como uma das suas \emph{threads} ativas o \emph{main loop} da classe
+\classname{PaxosPersistentQueue}. Em contra partida, uma réplica leitora, executa o
+\emph{main loop} da classe \classname{PaxosReadonlyQueue}. Essa classe, implementa somente
+a agregação dos agentes proponente e aprendiz, sem a utilização de memória persistente.
+Detalharemos nas próximas seções a implementação proposta para esse componente.
+
+\subsubsubsection{PaxosReadonlyQueue}
+
+A classe \classname{PaxosReadonlyQueue} foi criada para fornecer o mesmo comportamento da
+classe \classname{PaxosPersistenteQueue}: disponibilizar uma fila que será utilizada pelo
+protocolo Paxos. No entanto, as operações suportadas por \classname{PaxosReadonlyQueue}
+não as mesmas. Do ponto de vista do processamento de mensagens postadas na fila, as
+seguintes propriedades foram supostas para caracterizar uma réplica leitora:
+
+\begin{itemize}
+  \item Abdicar liderança: todas as mensagens relacionadas a eleição de líder não são
+    processadas, logo é eliminada qualquer possibilidade de uma réplica leitora se tornar
+    coordenadora de uma rodada de Paxos.
+  \item Inelegível ao voto: mensagens relacionadas a votação de uma proposta são
+    ignoradas. Dessa forma, réplicas leitoras não participam do processo de decisão de
+    consenso e não são essenciais para o progresso do algoritmo Paxos.
+  \item Aprendizado: todas as mensagens endereçadas ao componente \classname{Learner} são
+    processadas pela fila. Consequentemente, os mecanismos descobrir qual foi o consenso
+    de uma determinada rodada são habilitados.
+\end{itemize}
+
+O principal objetivo dessa classe é participar das operações que não exigem dados
+persistentes para garantir correção do algoritmo, oferecendo instâncias capazes de atuar
+parcialmente nas fases de Paxos. Do ponto de vista do cliente da aplicação um réplica
+leitora se comporta como uma réplica votante: ela atende requisições de qualquer tipo
+garantindo a execução atômica das mesmas. Sendo assim, as seguintes premissas não podem
+ser violadas:
+
+\begin{itemize}
+  \item Mensagens quem alteram o estado (escrita): são resolvidas pelo aglomerado de
+    réplicas orquestrado pelo protocolo Paxos, porém réplicas que não possuem grau de
+    memória persistente não participam da decisão de consenso.
+  \item Mensagens que não alteram estado (leitura): são resolvidas localmente independente
+    do grau de memória da réplica.
+\end{itemize}
+
+Do ponto de vista de uma réplica votante, não é possível distinguir se a proposta é
+oriunda de uma réplica votante ou leitora. O mecanismo para configuração do grau de
+memória de uma réplica em Treplica atua de forma transparente junto com protocolo Paxos,
+respeitando a forte premissa: o número de réplicas leitoras nunca deve afetar o número de
+réplicas votantes. Sendo assim, podemos afirmar que o progresso e a correção do algoritmo
+não são violados.
+
+Réplicas oferecem um poder de manobra para aliviar a carga de processamento das réplicas
+votantes com relação a mensagens de leituras, podendo ser configuradas de tal forma que
+nenhuma mensagem de leitura seja processada por uma réplica votante. Avaliar e propor
+soluções para configuração do conjunto de réplicas não faz parte do escopo desse trabalho.
+
 \subsubsubsection{WeakSecretary}
 
 A classe \classname{WeakSecretary} apresenta uma abstração de I/O sem persistência de
@@ -212,60 +286,6 @@ para entregar mensagens para a camada da aplicação. A principal razão para a 
 abstração em Treplica foi eliminar a operação de persistência em disco, gerando um
 componente volátil, capaz de oferecer as operações essenciais para o progresso do
 algoritmo sem o ônus da escrita em disco.
-
-\subsubsubsection{PaxosReadonlyQueue}
-
-A classe \classname{PaxosReadonlyQueue} possui o mesmo objetivo da classe
-\classname{PaxosPersistenteQueue}, já existente na biblioteca Treplica: fornecer uma fila
-que será utilizada pelo protocolo Paxos. No entanto, as operações executadas por
-\classname{PaxosReadonlyQueue} são bem difrerentes:
-
-Com relação ao processamento das mensagens postadas nessa fila, supomos as seguintes
-propriedades:
-
-\begin{itemize}
-  \item Abdicar liderança: todas as mensagens relacionadas a eleição de líder não são
-    processadas, logo é eliminada qualquer possibilidade de uma réplica leitora se tornar
-    coordenadora de uma rodada de Paxos.
-  \item Inelegível ao voto: mensagens relacionadas a votação de uma proposta são
-    ignoradas. Dessa forma, réplicas leitoras não participam do processo de decisão de
-    consenso e não são essenciais para o progresso do algoritmo Paxos.
-  \item Aprendizado: todas as mensagens endereçadas ao componente \classname{Learner} são
-    processadas pela fila. Consequentemente, os mecanismos descobrir qual foi o consenso
-    de uma determinada rodada são habilitados.
-\end{itemize}
-
-O principal objetivo dessa classe é não participar das operações que exigem dados
-persistentes para garantir correção do algoritmo, oferecendo instâncias capazes de atuar
-parcialmente nas fases de Paxos. Essas instâncias oferecem um poder de manobra para
-aliviar a carga de processamento das réplicas votantes com relação a mensagens de
-leituras, podendo ser configuradas de tal forma que nenhuma mensagem de leitura seja
-processada por uma réplica votante. Avaliar e propor soluções para configuração do
-conjunto de réplicas não faz parte do escopo desse trabalho.
-
-Relacionado as mensagens destinadas ao estado da aplicação gerenciado pela biblioteca
-Treplica, as seguintes premissas devem ser respeitadas:
-
-\begin{itemize}
-  \item Mensagens quem alteram o estado (escrita): são resolvidas pelo aglomerado de
-    réplicas orquestrado pelo protocolo Paxos, porém réplicas que não possuem grau de
-    memória persistente não participam da decisão de consenso.
-  \item Mensagens que não alteram estado (leitura): são resolvidas localmente independente
-    do grau de memória da réplica.
-\end{itemize}
-
-Do ponto de vista de uma réplica votante, não é possível distinguir se a proposta é
-oriunda de uma réplica votante ou leitora. O mecanismo para configuração do grau de
-memória de uma réplica em Treplica atua de forma transparente junto com protocolo Paxos,
-respeitando a forte premissa: o número de réplicas leitoras nunca deve afetar o número de
-réplicas votantes. Sendo assim, podemos afirmar que o progresso e a correção do algoritmo
-não são violados.
-
-\subsubsubsection{PaxosPersistenteQueue}
-  - Election
-  - Coordinator
-  - Acceptor
-  - StrongSecretary
 
 \subsubsection{Provisionamento de Réplicas Leitoras}
 
