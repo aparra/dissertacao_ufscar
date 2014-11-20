@@ -310,9 +310,25 @@ reconfiguração custosa \cite{lamport10}.
 
 \subsection{Protocolo para transferência de estado}
 
-Para que a agregação de uma nova réplica seja produtiva, é preciso realizar a
-transferência completa de um estado inicial que deve ser clonado de outra réplica já
-ativa, votante ou leitora. Por questões de garantia de consistência, a transferência de
+Alguns aspecto precisam ser considerados para a operação de inclusão de uma nova réplica
+em um aglomerado: (1) o estado da nova réplica está defasado com relação ao estado das
+réplicas participantes do grupo. É imprescindível que essa defasagem seja suprimida; (2) a
+operação de equiparação de estados deve gerar estados consistente (3) o impacto gerado
+para o processamento do aglomerado deve ser mínimo. Para justificar a inclusão de uma
+nova réplica, obrigatoriamente é preciso geração de benefícios para o processamento em
+grupo, caso contrário estamos executando operações de saturação sem benefícios.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=11cm]{conteudo/capitulos/figuras/inclusao_replica.eps}
+  \caption{Inclusão de réplica}
+  \label{fig:inclusao}
+\end{figure}
+
+Para que a inclusão de uma nova réplica seja produtiva \footnote{Inclusões produtivas são
+operações que aumentam a capacidade de processamento do sistema com o mínimo de impacto},
+é preciso realizar a transferência completa de um estado inicial que deve ser clonado de
+outra réplica já ativa, votante ou leitora. Por questões de garantia de consistência, a transferência de
 estado é uma tarefa síncrona. A réplica leitora está apta a processar as requisições de
 leitura ou escrita somente após o recebimento do estado inicial. E, enquanto ela aguarda,
 essas requisições são ignoradas. A réplica que doará seu estado não deve processar nenhuma
