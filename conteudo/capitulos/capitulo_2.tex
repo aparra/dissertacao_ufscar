@@ -310,13 +310,23 @@ reconfiguração custosa \cite{lamport10}.
 
 \subsection{Protocolo para transferência de estado}
 
-Alguns aspecto precisam ser considerados para a operação de inclusão de uma nova réplica
-em um aglomerado: (1) o estado da nova réplica está defasado com relação ao estado das
+A ideia principal dessa abordagem é a criação de um mecanismo que possibilite transferir, de
+forma eficiente, o estado entre réplicas. Para isso, criamos um protocolo que orquestra as
+iterações entre réplicas e os bloqueios de estado para garantia de consistência.
+Apresentaremos os detalhes dessa implementação nessa seção. Para maior clareza de
+exposição, quando necessário, chamaremos as réplicas que recebem o estado como
+\emph{réplicas receptoras} e réplicas que transferem seu estado como \emph{réplicas
+doadoras}.
+
+Primeiramente, estamos interessados em transferir estado quando trabalhamos com operações
+de expansão em um aglomerado (\autoref{fig:inclusao}). Alguns aspecto precisam ser
+considerados: (1) o estado da nova réplica está defasado com relação ao estado das
 réplicas participantes do grupo. É imprescindível que essa defasagem seja suprimida; (2) a
-operação de equiparação de estados deve gerar estados consistente (3) o impacto gerado
-para o processamento do aglomerado deve ser mínimo. Para justificar a inclusão de uma
-nova réplica, obrigatoriamente é preciso geração de benefícios para o processamento em
-grupo, caso contrário estamos executando operações de saturação sem benefícios.
+operação de equiparação de estados deve gerar estados consistente; (3) o impacto gerado
+para o processamento do aglomerado deve ser mínimo. Para justificar a inclusão de uma nova
+réplica, obrigatoriamente é preciso geração de benefícios para o processamento em grupo,
+caso contrário estamos executando operações sem serventia com potencial para saturar o
+sistema.
 
 \begin{figure}[ht]
   \centering
@@ -325,17 +335,51 @@ grupo, caso contrário estamos executando operações de saturação sem benefí
   \label{fig:inclusao}
 \end{figure}
 
-Para que a inclusão de uma nova réplica seja produtiva \footnote{Inclusões produtivas são
-operações que aumentam a capacidade de processamento do sistema com o mínimo de impacto},
-é preciso realizar a transferência completa de um estado inicial que deve ser clonado de
-outra réplica já ativa, votante ou leitora. Por questões de garantia de consistência, a transferência de
-estado é uma tarefa síncrona. A réplica leitora está apta a processar as requisições de
-leitura ou escrita somente após o recebimento do estado inicial. E, enquanto ela aguarda,
-essas requisições são ignoradas. A réplica que doará seu estado não deve processar nenhuma
-operação de escrita enquanto realiza a transferência de estado. Essa é uma atividade
-potencialmente custosa para o desempenho de Paxos, pois estamos bloqueando,
-temporariamente, a participação de uma réplica no processo de decisão de instâncias de
-consenso.
+Treplica possui outro potencial candidato para empregar o protocolo de transferência: o
+componente detector lacunas na sequência de instâncias de consenso. Lacunas podem surgir
+por diferentes motivos: falha-e-recuperação na réplica, perda de mensagens ou ainda
+réplicas com grandes diferenças de capacidade de processamento. Para preencher lacunas
+detectadas, o componente solicita retransmissão da instância de consenso em uma
+determinada rodada. É perceptível que na presença de grandes lacunas essa abordagem
+exigirá uma longa sequência de retransmissões.
+
+Para exemplificar o potencial problema do detector de lacunas, vamos supor que a aplicação
+$x$ está passando por um grande pico de processamento (\emph{flash crowds}) e que a
+réplica $r$ possui uma grande lacuna. O mecanismo detector de lacunas solicitará
+retransmissão das instâncias de consenso não conhecidas por ele, aumentando a concorrência
+no meio compartilhado pelas réplicas: a rede. Como solução alternativa, podemos utilizar o
+mecanismo de transferência, para concentrar em uma única mensagem, o estado resultante das
+aplicações das instâncias de consenso. Dessa forma, o novo mecanismo suposto para detectar
+lacunas tem capacidade de:
+
+\begin{itemize}
+  \item Retransmissão de instância de consenso: utilizado para preencher pequenas lacunas
+    na sequência de consenso.
+  \item Protocolo de transferência de estado: utilizado para preencher grandes lacunas,
+    onde retransmissão tem potencial perda de desempenho.
+\end{itemize}
+
+Para incluir uma nova réplica ou para preencher grandes lacunas precisamos que a operação
+de transferência de estado sejam produtivas. Ou seja, essa operação deve ter o mínimo de
+impacto no processamento do grupo, e no caso de inclusão de réplica, deve trazer aumento
+de capacidade de processamento. Por questões de garantia de consistência, a transferência
+de estado é implementada como uma tarefa síncrona. Supomos, as seguintes premissas para
+construção do protocolo:
+
+\begin{itemize}
+  \item Quando uma réplica inicia o processo de transferência, todas as mensagens
+    recebidas não pertencentes ao protocolo de transferência devem ser ignoradas.
+  \item A réplica doadora não deve processar nenhuma operação de escrita enquanto realiza
+    a transferência de estado.
+  \item Novas réplicas estarão aptas para processar requisições (leitura ou escrita)
+    somente após a configuração de um estado inicial.
+\end{itemize}
+
+Baseado nessas premissas, podemos afirmar que a operação de transferência de estado é
+custosa para o desempenho de Paxos, pois estamos bloqueando, temporariamente, a
+participação de uma réplica no processo de decisão de instâncias de consenso.
+
+\subsection{Funcionamento do protocolo}
 
 Visando minimizar a degradação de desempenho causada pela necessidade de transferência de
 estado, criamos um protocolo simples e eficaz para reger a junção de novas réplicas
@@ -417,10 +461,4 @@ instanciar uma nova réplica leitora e os ganhos de desempenho a serem auferidos
 instanciação. O trabalho de especificação de parâmetros para esta política ainda está em
 seu estágio inicial, dependendo de estudos mais aprofundados para caracterizar os custos
 envolvidos.
-
-
-
-\subsection{Alterações Propostas - Componente n}
-
-:se...
 
