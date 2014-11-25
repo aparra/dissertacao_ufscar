@@ -109,10 +109,160 @@ uma nova rodada por intermédio do agente \emph{coordenador}.
 
 \subsubsection{Acceptor}
 
+Colocar mais testo aqui!!!
+
 
 \section{Alterações propostas}
 
-Descrever o objetivo dessa secao
+Após detalharmos os componentes de Treplica e como eles estão relacionados, nesta seção
+iremos focar nossa discussão nas alterações propostas para expandir biblioteca. Até o
+momento, todos os conceitos foram apresentados para embasar as novas funcionalidades:
+
+\begin{itemize}
+  \item Protocolo para transferência de estado: mecanismo eficiente para transferência de
+    estado entre réplicas.
+  \item Réplicas leitoras: a ideia principal dessa abordagem é utilizar réplicas que não
+    participam de processo de decisão de instâncias de consenso.
+  \item Equalização de estado: proposta para novo componente que preenche lacunas na
+    sequência de instâncias de consenso.
+\end{itemize}
+
+\subsection{Protocolo para transferência de estado}
+
+A ideia principal dessa abordagem é a criação de um mecanismo que possibilite transferir, de
+forma eficiente, o estado entre réplicas. Para isso, criamos um protocolo que orquestra as
+iterações entre réplicas e os bloqueios de estado necessários para garantia de
+consistência. Visando maior clareza de exposição, quando necessário, chamaremos as
+réplicas que recebem o estado como \emph{réplicas receptoras} e réplicas que transferem
+seu estado como \emph{réplicas doadoras}.
+
+A necessidade de um mecanismo para transferência de estado surgiu a partir da suposição da
+equalização de estados divergentes entre réplicas de um mesmo grupo. A disparidade de
+estados em uma ambiente que emprega replicação ativa utilizando Paxos pode suceder a
+partir de: (1) falha-e-recuperação de uma réplica. Durante o período defeituoso, uma
+réplica pode perder $n$ decisões de consenso criando uma grande lacuna entre seu estado
+recuperado e o estado corrente da aplicação; ou (2) a divergência de estados pode ter um
+motivo nobre: expansão do aglomerado. No entanto, segundo \citeonline{lamport10}, toda
+operação para adição de réplica em Paxos deve ser precedida de uma operação não trivial de
+reconfiguração.
+
+Independente da razão para aplicação de uma transferência de estado, essa operação não
+deve gerar grande impacto no processamento do grupo. Tendo em vista a garantia de
+consistência, a transferência de estado é implementada como uma tarefa síncrona. As
+seguintes premissas foram supostas para construção do protocolo:
+
+\begin{itemize}
+  \item Quando uma réplica inicia o processo de transferência, todas as mensagens
+    recebidas não pertencentes ao protocolo de transferência devem ser ignoradas.
+  \item A réplica doadora não deve processar nenhuma operação de escrita enquanto realiza
+    a transferência de estado.
+  \item Novas réplicas estarão aptas para processar requisições (leitura ou escrita)
+    somente após a configuração de um estado inicial.
+\end{itemize}
+
+Baseado nessas premissas, podemos afirmar que a operação de transferência de estado é
+custosa para o desempenho de Paxos, pois estamos bloqueando, temporariamente, a
+participação de uma réplica no processo de decisão de instâncias de consenso.
+
+\subsection{Funcionamento do protocolo}
+
+Visando minimizar a degradação de desempenho causada pela necessidade de transferência de
+estado, criamos um protocolo simples e eficaz para reger a junção de novas réplicas
+leitoras à computação, conforme ilustrado na \autoref{fig:protocolo}. Durante o processo
+de transferência de estado, supomos que a réplica interessada em receber um novo estado é
+sempre uma réplica leitora e que a réplica que fornece esse estado pode ser tanto uma
+réplica leitora quanto votante. No restante da seção chamaremos essas réplicas de réplicas
+doadoras.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=11cm]{conteudo/capitulos/figuras/transferencia_estado.eps}
+  \caption{Protocolo de Transferência de Estado}
+  \label{fig:protocolo}
+\end{figure}
+
+Estabelecemos a premissa de que é responsabilidade da réplica leitora encontrar uma
+réplica disposta a transferir seu estado. A elegância do mecanismo de seleção de doador é
+herdada do Treplica: as réplicas conhecem somente seu próprio identificador de rede e
+podem alcançar todas as outras réplicas por uma primitiva simples de difusão. Quando
+iniciamos uma réplica leitora ela difunde uma mensagem (PredicateMessage) com o
+valor da última instância de consenso decidida. Essa mensagem é o início do protocolo de
+transferência de estado que explicitamente informa a existência de uma nova réplica
+tentando se juntar à computação e de que é preciso fornecer a ela um estado inicial.
+
+As réplicas que recebem a mensagem solicitando o estado são solidárias e tentam atender a
+essa requisição caso sua última instância decidida seja maior que a recebida no pedido de
+estado. Neste caso, elas enviam uma mensagem (ACKMessage) somente para o remetente
+do pedido de estado, com as informações sobre o seu estado atual (última instância de
+consenso e um indicador do tipo de réplica: leitora ou votante). Devido à restrição de
+sincronia de transferência de estado é preferível que a réplica leitora encontre outra
+réplica leitora para ser sua doadora de estado, tentando minimizar possíveis impactos na
+computação de Paxos.
+
+Estabelecemos o tempo máximo de 5 segundos para que a réplica leitora selecione uma
+réplica doadora e inicie a transferência de estado. Todas as respostas ao seu pedido de
+transferência de estado são armazenadas em memória, a espera de uma réplica doadora que
+satisfaça os requisitos para a doação de estado. Caso o tempo limite seja alcançado e no
+conjunto de possíveis doadoras não exista nenhuma réplica leitora, uma réplica votante
+será selecionada. Selecionar uma réplica votante para transferir estado pode impactar
+diretamente no desempenho da aplicação, porque essa máquina não participará da eleição do
+novo estado durante o período de transmissão. Em Paxos, a partir do momento em que a
+maioria dos receptores concordam com a alteração do estado, mais cedo ou mais tarde todas
+as réplicas chegarão a um consenso. A partir do momento que retiramos da computação uma
+réplica votante, a probabilidade de atingir consenso pela maioria diminui, podendo até
+impossibilitar o progresso do algoritmo.
+
+Dado que o estado de uma aplicação pode ser tão grande quanto a capacidade de memória de
+uma réplica e que todas as mensagens de Treplica são trocadas via protocolo UDP, optamos
+por aumentar a vazão da transferência de estado usando o protocolo TCP. Somente o estado é
+enviado via TCP, todas as outras mensagens utilizam a comunicação UDP nativa de Treplica.
+Sendo assim, a réplica leitora abre um \emph{socket} TCP e envia uma mensagem
+(GETMessage) para a réplica doadora com o endereço do \emph{socket} TCP para envio de
+estado. A réplica doadora bloqueia suas atividades, estabelece a conexão TCP com a réplica
+leitora e transfere seu estado.
+
+Assim que a transferência de estado é concluída, a conexão TCP entre as réplicas é
+finalizada, a réplica doadora volta para computação e a réplica leitora começa a processar
+as requisições encaminhadas pelos seus clientes. Caso todas as etapas do protocolo de
+transferência de estado não sejam concluídas em no máximo 10 segundos, a negociação de
+estado  é reiniciada até que se obtenha êxito e uma nova  réplica leitora seja adicionada
+ao sistema.
+
+\subsubsection{Componentes alterados}
+
+Descrever todos os componentes alterados para a utilização desse mecanismo
+
+\subsubsection{Política de Reconfiguração}
+
+Primeiramente, estamos interessados em transferir estado quando trabalhamos com operações
+de expansão em um aglomerado (\autoref{fig:inclusao}). Alguns aspecto precisam ser
+considerados: (1) o estado da nova réplica está defasado com relação ao estado das
+réplicas participantes do grupo. É imprescindível que essa defasagem seja suprimida; (2) a
+operação de equiparação de estados deve gerar estados consistente; (3) o impacto gerado
+para o processamento do aglomerado deve ser mínimo. Para justificar a inclusão de uma nova
+réplica, obrigatoriamente é preciso geração de benefícios para o processamento em grupo,
+caso contrário estamos executando operações sem serventia com potencial para saturar o
+sistema.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=11cm]{conteudo/capitulos/figuras/inclusao_replica.eps}
+  \caption{Inclusão de réplica}
+  \label{fig:inclusao}
+\end{figure}
+
+O mecanismo descrito na seção anterior deve ser regido por uma política de criação e
+remoção de réplicas leitoras. A  motivação por trás da criação de réplicas leitoras é
+permitir que o sistema reaja de forma autônoma a picos de carga sem comprometer o
+desempenho do mesmo. No entanto, sem uma política cuidadosa de reconfiguração corre-se o
+risco de gastar muitos dos recursos do sistema no próprio processo de reconfiguração,
+anulando quaisquer ganhos advindos do acréscimo de novas réplicas leitoras.
+
+A política de reconfiguração deve, desta forma, ser um equilíbrio entre o custo de se
+instanciar uma nova réplica leitora e os ganhos de desempenho a serem auferidos após esta
+instanciação. O trabalho de especificação de parâmetros para esta política ainda está em
+seu estágio inicial, dependendo de estudos mais aprofundados para caracterizar os custos
+envolvidos.
 
 \subsection{Paxos com Réplicas Leitoras}
 
@@ -307,33 +457,7 @@ Em particular, a adição ou remoção de uma réplica leitora não altera o nú
 receptores executando o algoritmo, não havendo necessidade de se realizar um
 reconfiguração custosa \cite{lamport10}.
 
-
-\subsection{Protocolo para transferência de estado}
-
-A ideia principal dessa abordagem é a criação de um mecanismo que possibilite transferir, de
-forma eficiente, o estado entre réplicas. Para isso, criamos um protocolo que orquestra as
-iterações entre réplicas e os bloqueios de estado para garantia de consistência.
-Apresentaremos os detalhes dessa implementação nessa seção. Para maior clareza de
-exposição, quando necessário, chamaremos as réplicas que recebem o estado como
-\emph{réplicas receptoras} e réplicas que transferem seu estado como \emph{réplicas
-doadoras}.
-
-Primeiramente, estamos interessados em transferir estado quando trabalhamos com operações
-de expansão em um aglomerado (\autoref{fig:inclusao}). Alguns aspecto precisam ser
-considerados: (1) o estado da nova réplica está defasado com relação ao estado das
-réplicas participantes do grupo. É imprescindível que essa defasagem seja suprimida; (2) a
-operação de equiparação de estados deve gerar estados consistente; (3) o impacto gerado
-para o processamento do aglomerado deve ser mínimo. Para justificar a inclusão de uma nova
-réplica, obrigatoriamente é preciso geração de benefícios para o processamento em grupo,
-caso contrário estamos executando operações sem serventia com potencial para saturar o
-sistema.
-
-\begin{figure}[ht]
-  \centering
-  \includegraphics[width=11cm]{conteudo/capitulos/figuras/inclusao_replica.eps}
-  \caption{Inclusão de réplica}
-  \label{fig:inclusao}
-\end{figure}
+\subsection{Equalização de estado}
 
 Treplica possui outro potencial candidato para empregar o protocolo de transferência: o
 componente detector lacunas na sequência de instâncias de consenso. Lacunas podem surgir
@@ -358,107 +482,4 @@ lacunas tem capacidade de:
   \item Protocolo de transferência de estado: utilizado para preencher grandes lacunas,
     onde retransmissão tem potencial perda de desempenho.
 \end{itemize}
-
-Para incluir uma nova réplica ou para preencher grandes lacunas precisamos que a operação
-de transferência de estado sejam produtivas. Ou seja, essa operação deve ter o mínimo de
-impacto no processamento do grupo, e no caso de inclusão de réplica, deve trazer aumento
-de capacidade de processamento. Por questões de garantia de consistência, a transferência
-de estado é implementada como uma tarefa síncrona. Supomos, as seguintes premissas para
-construção do protocolo:
-
-\begin{itemize}
-  \item Quando uma réplica inicia o processo de transferência, todas as mensagens
-    recebidas não pertencentes ao protocolo de transferência devem ser ignoradas.
-  \item A réplica doadora não deve processar nenhuma operação de escrita enquanto realiza
-    a transferência de estado.
-  \item Novas réplicas estarão aptas para processar requisições (leitura ou escrita)
-    somente após a configuração de um estado inicial.
-\end{itemize}
-
-Baseado nessas premissas, podemos afirmar que a operação de transferência de estado é
-custosa para o desempenho de Paxos, pois estamos bloqueando, temporariamente, a
-participação de uma réplica no processo de decisão de instâncias de consenso.
-
-\subsection{Funcionamento do protocolo}
-
-Visando minimizar a degradação de desempenho causada pela necessidade de transferência de
-estado, criamos um protocolo simples e eficaz para reger a junção de novas réplicas
-leitoras à computação, conforme ilustrado na \autoref{fig:protocolo}. Durante o processo
-de transferência de estado, supomos que a réplica interessada em receber um novo estado é
-sempre uma réplica leitora e que a réplica que fornece esse estado pode ser tanto uma
-réplica leitora quanto votante. No restante da seção chamaremos essas réplicas de réplicas
-doadoras.
-
-\begin{figure}[ht]
-  \centering
-  \includegraphics[width=11cm]{conteudo/capitulos/figuras/transferencia_estado.eps}
-  \caption{Protocolo de Transferência de Estado}
-  \label{fig:protocolo}
-\end{figure}
-
-Estabelecemos a premissa de que é responsabilidade da réplica leitora encontrar uma
-réplica disposta a transferir seu estado. A elegância do mecanismo de seleção de doador é
-herdada do Treplica: as réplicas conhecem somente seu próprio identificador de rede e
-podem alcançar todas as outras réplicas por uma primitiva simples de difusão. Quando
-iniciamos uma réplica leitora ela difunde uma mensagem (PredicateMessage) com o
-valor da última instância de consenso decidida. Essa mensagem é o início do protocolo de
-transferência de estado que explicitamente informa a existência de uma nova réplica
-tentando se juntar à computação e de que é preciso fornecer a ela um estado inicial.
-
-As réplicas que recebem a mensagem solicitando o estado são solidárias e tentam atender a
-essa requisição caso sua última instância decidida seja maior que a recebida no pedido de
-estado. Neste caso, elas enviam uma mensagem (ACKMessage) somente para o remetente
-do pedido de estado, com as informações sobre o seu estado atual (última instância de
-consenso e um indicador do tipo de réplica: leitora ou votante). Devido à restrição de
-sincronia de transferência de estado é preferível que a réplica leitora encontre outra
-réplica leitora para ser sua doadora de estado, tentando minimizar possíveis impactos na
-computação de Paxos.
-
-Estabelecemos o tempo máximo de 5 segundos para que a réplica leitora selecione uma
-réplica doadora e inicie a transferência de estado. Todas as respostas ao seu pedido de
-transferência de estado são armazenadas em memória, a espera de uma réplica doadora que
-satisfaça os requisitos para a doação de estado. Caso o tempo limite seja alcançado e no
-conjunto de possíveis doadoras não exista nenhuma réplica leitora, uma réplica votante
-será selecionada. Selecionar uma réplica votante para transferir estado pode impactar
-diretamente no desempenho da aplicação, porque essa máquina não participará da eleição do
-novo estado durante o período de transmissão. Em Paxos, a partir do momento em que a
-maioria dos receptores concordam com a alteração do estado, mais cedo ou mais tarde todas
-as réplicas chegarão a um consenso. A partir do momento que retiramos da computação uma
-réplica votante, a probabilidade de atingir consenso pela maioria diminui, podendo até
-impossibilitar o progresso do algoritmo.
-
-Dado que o estado de uma aplicação pode ser tão grande quanto a capacidade de memória de
-uma réplica e que todas as mensagens de Treplica são trocadas via protocolo UDP, optamos
-por aumentar a vazão da transferência de estado usando o protocolo TCP. Somente o estado é
-enviado via TCP, todas as outras mensagens utilizam a comunicação UDP nativa de Treplica.
-Sendo assim, a réplica leitora abre um \emph{socket} TCP e envia uma mensagem
-(GETMessage) para a réplica doadora com o endereço do \emph{socket} TCP para envio de
-estado. A réplica doadora bloqueia suas atividades, estabelece a conexão TCP com a réplica
-leitora e transfere seu estado.
-
-Assim que a transferência de estado é concluída, a conexão TCP entre as réplicas é
-finalizada, a réplica doadora volta para computação e a réplica leitora começa a processar
-as requisições encaminhadas pelos seus clientes. Caso todas as etapas do protocolo de
-transferência de estado não sejam concluídas em no máximo 10 segundos, a negociação de
-estado  é reiniciada até que se obtenha êxito e uma nova  réplica leitora seja adicionada
-ao sistema.
-
-\subsubsection{Componentes alterados}
-
-Descrever todos os componentes alterados para a utilização desse mecanismo
-
-\subsubsection{Política de Reconfiguração}
-
-O mecanismo descrito na seção anterior deve ser regido por uma política de criação e
-remoção de réplicas leitoras. A  motivação por trás da criação de réplicas leitoras é
-permitir que o sistema reaja de forma autônoma a picos de carga sem comprometer o
-desempenho do mesmo. No entanto, sem uma política cuidadosa de reconfiguração corre-se o
-risco de gastar muitos dos recursos do sistema no próprio processo de reconfiguração,
-anulando quaisquer ganhos advindos do acréscimo de novas réplicas leitoras.
-
-A política de reconfiguração deve, desta forma, ser um equilíbrio entre o custo de se
-instanciar uma nova réplica leitora e os ganhos de desempenho a serem auferidos após esta
-instanciação. O trabalho de especificação de parâmetros para esta política ainda está em
-seu estágio inicial, dependendo de estudos mais aprofundados para caracterizar os custos
-envolvidos.
 
