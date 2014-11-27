@@ -114,9 +114,10 @@ Colocar mais testo aqui!!!
 
 \section{Alterações propostas}
 
-Após detalharmos os componentes de Treplica e como eles estão relacionados, nesta seção
-iremos focar nossa discussão nas alterações propostas para expandir biblioteca. Até o
-momento, todos os conceitos foram apresentados para embasar as novas funcionalidades:
+Apresentamos, exaustivamente, os conceitos utilizados para criação da biblioteca Treplica,
+os detalhes de seus componentes e como eles estão relacionados. A partir de agora, iremos
+focar nossa discussão nas alterações propostas para expansão da biblioteca. O objetivo
+dessa seção é a apresentar e detalhar as seguintes funcionalidades:
 
 \begin{itemize}
   \item Protocolo para transferência de estado: mecanismo eficiente para transferência de
@@ -142,14 +143,16 @@ estados em uma ambiente que emprega replicação ativa utilizando Paxos pode suc
 partir de: (1) falha-e-recuperação de uma réplica. Durante o período defeituoso, uma
 réplica pode perder $n$ decisões de consenso criando uma grande lacuna entre seu estado
 recuperado e o estado corrente da aplicação; ou (2) a divergência de estados pode ter um
-motivo nobre: expansão do aglomerado. No entanto, segundo \citeonline{lamport10}, toda
-operação para adição de réplica em Paxos deve ser precedida de uma operação não trivial de
-reconfiguração.
+motivo mais nobre: expansão do aglomerado. No entanto, segundo \citeonline{lamport10},
+toda operação para adição de réplica em Paxos deve ser precedida de uma operação não
+trivial de reconfiguração.
 
-Independente da razão para aplicação de uma transferência de estado, essa operação não
-deve gerar grande impacto no processamento do grupo. Tendo em vista a garantia de
-consistência, a transferência de estado é implementada como uma tarefa síncrona. As
-seguintes premissas foram supostas para construção do protocolo:
+Independente da motivação para aplicação de uma transferência de estado, essa operação
+não deve gerar grande impacto para o processamento em grupo e deve preservar a correção do
+algoritmo. Tendo em vista a garantia de consistência, implementamos essa operação como uma
+tarefa \emph{síncrona} \footnote{No modelo requisição/resposta, o emissor dos dados fica
+bloqueado até receber uma resposta do receptor \cite{coulouris11}}. As seguintes premissas
+foram supostas para construção do protocolo:
 
 \begin{itemize}
   \item Quando uma réplica inicia o processo de transferência, todas as mensagens
@@ -164,15 +167,13 @@ Baseado nessas premissas, podemos afirmar que a operação de transferência de 
 custosa para o desempenho de Paxos, pois estamos bloqueando, temporariamente, a
 participação de uma réplica no processo de decisão de instâncias de consenso.
 
-\subsection{Funcionamento do protocolo}
+\subsubsection{Funcionamento do protocolo}
 
 Visando minimizar a degradação de desempenho causada pela necessidade de transferência de
-estado, criamos um protocolo simples e eficaz para reger a junção de novas réplicas
-leitoras à computação, conforme ilustrado na \autoref{fig:protocolo}. Durante o processo
-de transferência de estado, supomos que a réplica interessada em receber um novo estado é
-sempre uma réplica leitora e que a réplica que fornece esse estado pode ser tanto uma
-réplica leitora quanto votante. No restante da seção chamaremos essas réplicas de réplicas
-doadoras.
+estado, criamos um protocolo simples dividido em 3 etapas: negociação, seleção de doador e
+transferência (\autoref{fig:protocolo}).
+
+** Definir as fases
 
 \begin{figure}[ht]
   \centering
@@ -181,12 +182,15 @@ doadoras.
   \label{fig:protocolo}
 \end{figure}
 
-Estabelecemos a premissa de que é responsabilidade da réplica leitora encontrar uma
-réplica disposta a transferir seu estado. A elegância do mecanismo de seleção de doador é
-herdada do Treplica: as réplicas conhecem somente seu próprio identificador de rede e
-podem alcançar todas as outras réplicas por uma primitiva simples de difusão. Quando
-iniciamos uma réplica leitora ela difunde uma mensagem (PredicateMessage) com o
-valor da última instância de consenso decidida. Essa mensagem é o início do protocolo de
+Estabelecemos a premissa que é responsabilidade da réplica receptora encontrar uma réplica
+doadora (réplica disposta a transferir o seu estado). A elegância do mecanismo de seleção
+de doador é herdada de Treplica: as réplicas conhecem somente seu próprio identificador de
+rede e podem alcançar todas as outras réplicas por uma primitiva simples de difusão.
+
+** Mudei a porra toda, falar sobre as politicas de trasnferencia
+
+Quando iniciamos uma réplica leitora ela difunde uma mensagem (PredicateMessage) com o valor da
+última instância de consenso decidida. Essa mensagem é o início do protocolo de
 transferência de estado que explicitamente informa a existência de uma nova réplica
 tentando se juntar à computação e de que é preciso fornecer a ela um estado inicial.
 
