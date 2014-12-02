@@ -170,10 +170,50 @@ participação de uma réplica no processo de decisão de instâncias de consens
 \subsubsection{Funcionamento do protocolo}
 
 Visando minimizar a degradação de desempenho causada pela necessidade de transferência de
-estado, criamos um protocolo simples dividido em 3 etapas: negociação, seleção de doador e
-transferência (\autoref{fig:protocolo}).
+estado, criamos um protocolo simples dividido em três fases, colo ilustrado na
+\autoref{fig:fases_protocolo}.
 
-** Definir as fases
+\begin{itemize}
+  \item Na Fase 1 (\emph{Fase de Negociação}) a réplica receptora envia uma mensagem com
+    as regras do estado almejado (política contratual).
+  \item Na Fase 2 (\emph{Seleção de Doadora}), ocorre a apuração do melhor acordo proposto
+    pelas réplicas que atendem as exigências estabelecidas pela réplica receptora. Somente
+    uma réplica doadora é selecionada.
+  \item Finalmente, na Fase 3 (\emph{Transferência}) o estado da réplica doadora eleita na
+    Fase 2 é transferido para a réplica receptora.
+\end{itemize}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=11cm]{conteudo/capitulos/figuras/fases_protocolo.eps}
+  \caption{Protocolo de Transferência de Estado}
+  \label{fig:fases_protocolo}
+\end{figure}
+
+Estabelecemos a premissa que é responsabilidade da réplica receptora encontrar uma réplica
+doadora (réplica disposta a transferir o seu estado). A elegância do mecanismo de seleção
+de doador é herdada de Treplica: as réplicas conhecem somente seu próprio identificador de
+rede e podem alcançar todas as outras réplicas por uma primitiva simples de difusão.
+
+Na Fase de Negociação, a réplica receptora estabelece as regras da transferência de estado
+através da mensagem \classname{PolicyMessage}. Por exemplo, supomos que, independente do
+motivo, uma réplica $r$ deseje receber um estado a partir da instância de consenso 240.
+Então, $r$ inicia a negociação de estado difundindo a mensagem contratual. As réplicas que
+recebem a mensagem solicitando negociação de estado são solidárias e tentam atender a essa
+requisição. Elas avaliam as exigências da mensagem e, caso estejam de acordo, enviam a
+mensagem \classname{DealMessage} somente para a réplica receptora (remetente da mensagem
+de contrato). Essa mensagem propondo acordo, contendo informações referentes do seu estado
+atual.
+
+Caso a réplica receptora não receba nenhuma proposta de acordo, ela reinicia a Fase de
+Negociação.
+
+Nesse caso, elas enviam uma mensagem (ACKMessage) somente para o remetente
+do pedido de estado, com as informações sobre o seu estado atual (última instância de
+consenso e um indicador do tipo de réplica: leitora ou votante). Devido à restrição de
+sincronia de transferência de estado é preferível que a réplica leitora encontre outra
+réplica leitora para ser sua doadora de estado, tentando minimizar possíveis impactos na
+computação de Paxos.
 
 \begin{figure}[ht]
   \centering
@@ -182,15 +222,8 @@ transferência (\autoref{fig:protocolo}).
   \label{fig:protocolo}
 \end{figure}
 
-Estabelecemos a premissa que é responsabilidade da réplica receptora encontrar uma réplica
-doadora (réplica disposta a transferir o seu estado). A elegância do mecanismo de seleção
-de doador é herdada de Treplica: as réplicas conhecem somente seu próprio identificador de
-rede e podem alcançar todas as outras réplicas por uma primitiva simples de difusão.
-
-** Mudei a porra toda, falar sobre as politicas de trasnferencia
-
-Quando iniciamos uma réplica leitora ela difunde uma mensagem (PredicateMessage) com o valor da
-última instância de consenso decidida. Essa mensagem é o início do protocolo de
+Quando iniciamos uma réplica leitora ela difunde uma mensagem (PredicateMessage) com o
+valor da última instância de consenso decidida. Essa mensagem é o início do protocolo de
 transferência de estado que explicitamente informa a existência de uma nova réplica
 tentando se juntar à computação e de que é preciso fornecer a ela um estado inicial.
 
@@ -234,7 +267,27 @@ ao sistema.
 
 \subsubsection{Componentes alterados}
 
-Descrever todos os componentes alterados para a utilização desse mecanismo
+Fazer uma pequena introdução.
+
+\subsubsubsection{PolicyMessage}
+
+Descrever todos os componentes alterados para a utilização desse mecanismo.
+
+\subsubsubsection{DealMessage}
+
+Descrever todos os componentes alterados para a utilização desse mecanismo.
+
+\subsubsubsection{GetMessage}
+
+Descrever todos os componentes alterados para a utilização desse mecanismo.
+
+\subsubsubsection{StateMessage}
+
+Descrever todos os componentes alterados para a utilização desse mecanismo.
+
+\subsubsubsection{Diplomat}
+
+Descrever todos os componentes alterados para a utilização desse mecanismo.
 
 \subsubsection{Política de Reconfiguração}
 
