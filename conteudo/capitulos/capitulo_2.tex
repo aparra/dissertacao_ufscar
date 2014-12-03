@@ -205,8 +205,23 @@ mensagem \classname{DealMessage} somente para a réplica receptora (remetente da
 de contrato). Essa mensagem propondo acordo, contendo informações referentes do seu estado
 atual.
 
-Caso a réplica receptora não receba nenhuma proposta de acordo, ela reinicia a Fase de
-Negociação.
+Caso a réplica receptora não receba nenhuma proposta de acordo apos um tempo estabelecido,
+ela reinicia a Fase de Negociação. Utilizando-se dessa premissa, podemos criar diferentes
+politicas contratuais para receber um estado, lembrando que todas as politicas devem
+informar qual a instância de consenso pretendida. Nessa versao proposta de Treplica,
+configuramos duas politicas:
+
+\begin{itemize}
+  \item Somente replicas leitoras: essa politica eh mais restritiva, busca um acordo com
+    uma replica leitora \footnote{Replicas leitoras sao replicas onde apenas os agentes
+    proponente e aprendiz estao em execucao. Elas nao assumem um papel fundamental na
+    execucao de Paxos. Trataremos replicas leitoras na \autoref{sec:replicas_leitoras}.
+    Acordos com replica leitoras sao preferevies devido à restrição de sincronia exigida
+    pela transferência de estado. Dessa forma, essa politica tenta minimizar possíveis
+    impactos na computação de Paxos.
+  \item Qualquer replica: essa politica eh a menos restritica possivel, busca um acordo
+    independente da configuracao da replica.
+\end{itemize}
 
 Nesse caso, elas enviam uma mensagem (ACKMessage) somente para o remetente
 do pedido de estado, com as informações sobre o seu estado atual (última instância de
@@ -321,7 +336,7 @@ instanciação. O trabalho de especificação de parâmetros para esta política
 seu estágio inicial, dependendo de estudos mais aprofundados para caracterizar os custos
 envolvidos.
 
-\subsection{Paxos com Réplicas Leitoras}
+\subsection{Paxos com Réplicas Leitoras}\label{sec:replicas_leitoras}
 
 A ideia principal da abordagem proposta é utilizar réplicas que não participem do processo
 de decisão de instâncias de consenso. Isso é feito com a adoção de \emph{réplicas
