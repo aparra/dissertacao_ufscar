@@ -173,8 +173,8 @@ Estabelecemos a premissa que é responsabilidade da réplica receptora encontrar
 doadora (réplica disposta a transferir o seu estado). A elegância do mecanismo de seleção
 de doador é herdada de Treplica: as réplicas conhecem somente seu próprio identificador de
 rede e podem alcançar todas as outras réplicas por uma primitiva simples de difusão.
-Criamos o protocolo com a preocupacao de minimizar a degradação de desempenho causada pela
-operacao de transferência de estado. Ele foi dividido em três fases, conforme ilustra a
+Criamos o protocolo com a preocupação de minimizar a degradação de desempenho causada pela
+operação de transferência de estado. Ele foi dividido em três fases, conforme ilustra a
 \autoref{fig:fases_protocolo}.
 
 \begin{itemize}
@@ -194,64 +194,68 @@ operacao de transferência de estado. Ele foi dividido em três fases, conforme 
   \label{fig:fases_protocolo}
 \end{figure}
 
-Na Fase de Negociação, a réplica receptora estabelece as regras da transferência de estado
-através da mensagem \classname{PolicyMessage}. Por exemplo, supomos que, independente do
-motivo, uma réplica $r$ deseje receber um estado a partir da instância de consenso $240$.
-Então, $r$ inicia a negociação de estado difundindo a mensagem contratual. As réplicas que
-recebem essa mensagem de solicitcao de negociação de estado são solidárias e tentam
-atender essa requisição. Elas avaliam as exigências contidas na mensagem e, caso estejam
-de acordo, enviam, somente para a replica receptora (remetente da mensagagem de contrato,
-a mensagem \classname{DealMessage}. Essa mensagem propondo acordo, contem informações
-referentes do estado que a replica doadora esta disposta a fornecer.
+Na Fase de Negociação, fase inicial, a réplica receptora estabelece as regras da
+transferência de estado através da mensagem \classname{PolicyMessage}. Por exemplo,
+supomos que, independente do motivo, uma réplica $r$ deseje receber um estado a partir da
+instância de consenso $240$. Então, $r$ inicia a negociação de estado difundindo a
+mensagem contratual. As réplicas que recebem essa mensagem de solicitação de negociação de
+estado são solidárias e tentam atender essa requisição. Elas avaliam as exigências
+contidas na mensagem e, caso estejam de acordo, enviam, somente para a replica receptora
+(remetente do contrato), a mensagem \classname{DealMessage}. Essa proposta acordo, contém
+informações referentes ao estado que a réplica doadora está oferecendo.
 
-Caso a réplica receptora não receba nenhuma proposta de acordo apos um tempo estabelecido,
-ela reinicia a Fase de Negociação ate encontrar um replica doadora. Podemos no beneficiar
-desse \emph{loop} inicial que se encontra a replica receptora para criarmos diferentes
-politicas contratuais para transferencia de estado. Nessa versao proposta de Treplica,
-supomos configuracoes de duas politicas, lembrando que todas as politicas devem informar
-no minimo a instancia de cosenso pretendida:
+Caso a réplica receptora não receba nenhuma proposta de acordo após um tempo
+pré-estabelecido, ela reinicia a Fase de Negociação até encontrar uma réplica doadora.
+Podemos nos beneficiar desse \emph{loop} inicial que se encontra a réplica receptora para
+criarmos diferentes políticas contratuais para transferência de estado. Nessa versão
+proposta de Treplica, supomos configurações de duas politicas: uma mais agressiva e outra
+mais ingênua. Lembrando que todas as políticas devem fornecer qual é a instância de
+consenso pretendida.
 
 \begin{itemize}
-  \item Somente replicas leitoras: essa politica eh mais restritiva, busca um acordo com
-    uma replica leitora \footnote{Replicas leitoras sao replicas onde apenas os agentes
-    proponente e aprendiz estao em execucao. Elas nao assumem um papel fundamental na
-    execucao de Paxos. Trataremos replicas leitoras na \autoref{sec:replicas_leitoras}.
-    Acordos com replica leitoras sao preferevies devido à restrição de sincronia exigida
-    pela transferência de estado. Dessa forma, essa politica tenta minimizar possíveis
-    impactos na computação de Paxos.
-  \item Qualquer replica: essa politica eh a menos restritica possivel, busca um acordo
-    independente da configuracao da replica.
+  \item Somente réplicas leitoras: essa política é mais restritiva, busca um acordo com
+    uma réplica leitora \footnote{Réplicas leitoras são aquelas onde apenas os agentes
+    proponente e aprendiz estão em execução. Elas não assumem um papel fundamental na
+    execução de Paxos. Trataremos réplicas leitoras na \autoref{sec:replicas_leitoras}.
+    Acordos com réplica leitoras são preferíveis devido à restrição de sincronia exigida
+    pelo protocolo. Dessa forma, essa política tenta minimizar possíveis impactos na
+    computação de Paxos.
+  \item Qualquer réplica: essa política é a menos restritiva possível, busca um acordo
+    independente da configuração da réplica.
 \end{itemize}
 
-Cuidado ao selecionar uma réplica votante para transferencia de estado, pois podemos gerar
-impacto diretamente no desempenho da aplicação. A replica seleciona não participará da
-eleição do novo estado durante o período de transmissão (perido de congelamento do estado
-para garantia de consistencia). Lembrando que, no algoritimo Paxos, a partir do momento em
+Devemos ter cuidado ao eleger uma réplica votante como réplica doadora, pois podemos gerar
+impacto direto no desempenho da aplicação. A réplica doadora não participará da eleição de
+um novo estado durante o período que está transmitindo seu estado (congelamento do estado
+para garantia de consistência). Lembrando que, no algoritmo Paxos, a partir do momento em
 que a maioria dos receptores concordam com a alteração do estado, mais cedo ou mais tarde
 todas as réplicas chegarão ao mesmo estado. A partir do momento que retiramos
 temporariamente da computação uma réplica votante, a probabilidade de atingir consenso
 pela maioria diminui, podendo até impossibilitar o progresso do algoritmo.
 
-Quando a replica receptora possui propostas de acordo, ela inicia a Fase de Selecao de
-Doadora. Essa fase executa um algoritmo simples capaz de eleger a replica que propos o
-melhor acordo. Somente a partir do momento que o algotimo estabelece uma replica doadora a
-Fase de Transferencia eh inciada. Para a execucao dessa fase, os seguintes aspectos foram
-considerados: (1) o estado de uma aplicação pode ser tão grande quanto a capacidade de
-memória de uma réplica; (2) todas as mensagens de Treplica são trocadas via protocolo UDP.
-Optamos entao por aumentar a vazão da transferência de estado utilizando o protocolo TCP.
-Somente o estado é enviado via TCP, todas as outras mensagens utilizam comunicação UDP
-nativa de Treplica. Sendo assim, a réplica receptora abre um \emph{socket} TCP e envia a
-mensagem \classname{GETMessage} para a réplica doadora contendo o endereço do
-\emph{socket} TCP aberto para envio do estado. A réplica doadora bloqueia suas atividades,
-estabelece a conexão TCP com a réplica leitora e transfere seu estado.
+O protocolo progride quando a réplica receptora possui propostas de acordo. Quando essa
+condição é alcançada, ela inicia a Fase de Seleção de Doadora. Fase que executa um
+algoritmo simples capaz de eleger a réplica que propôs o melhor acordo. Somente a partir
+do momento que o algoritmo estabelece uma réplica doadora a Fase de Transferência inicia.
+Para a execução dessa fase, os seguintes aspectos de Treplica foram considerados: (1) o
+estado de uma aplicação pode ser tão grande quanto a capacidade de memória de uma réplica;
+(2) todas as mensagens são trocadas utilizando o protocolo UDP.
 
-Assim que a operacao de transferência de estado é concluída, a conexão TCP entre as
-réplicas é finalizada, a réplica doadora volta para computação e a réplica leitora começa
-a processar as requisições encaminhadas pelos seus clientes. Existe um \emph{timeout}
-estabelecido para transferir estado, caso todas as etapas do protocolo não sejam
-concluídas em no máximo 10 segundos, a negociação de estado é reiniciada até que se
-obtenha êxito. A \autoref{fig:protocolo} ilustra o funcionamento do protocolo com suas
-respectivas trocas de mensagens.
+Optamos então pela utilização do protocolo TCP para transferência de estado cobiçando
+maior vazão dos dados nessa operação. Somente o estado é enviado via TCP, todas as outras
+mensagens pertencentes ao protocolo utilizam comunicação UDP, nativa de Treplica. Sendo
+assim, a réplica receptora abre um \emph{socket} TCP e envia a mensagem
+\classname{GETMessage} para a réplica doadora com o endereço do \emph{socket} TCP
+recentemente aberto. Por sua vez, a réplica doadora bloqueia suas atividades e estabelece
+a conexão TCP com a réplica leitora. Finalmente a transferência de estado é executada.
+
+Assim que a operação é concluída, a conexão TCP entre as réplicas é finalizada. A réplica
+doadora volta para computação e a réplica leitora começa a processar as requisições
+encaminhadas pelos seus clientes. Estabelecemos um \emph{timeout} para evitar bloqueios
+indevidos por falha em alguma das réplicas envolvidas na transação. Caso todas as etapas
+do protocolo não sejam concluídas em no máximo 10 segundos, a negociação de estado é
+reiniciada até que se obtenha êxito. A \autoref{fig:protocolo} ilustra o funcionamento do
+protocolo com suas respectivas trocas de mensagens.
 
 \begin{figure}[ht]
   \centering
