@@ -266,15 +266,27 @@ protocolo com suas respectivas trocas de mensagens.
 
 \subsubsection{Componentes alterados}
 
-Fazer uma pequena introdução.
+Todas as classes de mensagem implementam a interface de marcação
+\classname{StateTransferMessage}.
 
 \subsubsubsection{PolicyMessage}
 
-Descrever todos os componentes alterados para a utilização desse mecanismo.
+A classe \classname{PolicyMessage} é a primeira mensagem do protocolo para transferência
+de estado. Essa classe além de sinalizar para as outras réplicas o interesse existente de
+uma réplica em receber um estado, contém todas as informações sobre o estado pretendido
+pela réplica receptora. Os dados contratuais são abstraídos pela classe
+\classname{Policy}. Essa classe por sua vez, contém o número da instância de consenso
+desejado e uma lista de regras que uma réplica deve obedecer para ser uma doadora.
 
 \subsubsubsection{DealMessage}
 
-Descrever todos os componentes alterados para a utilização desse mecanismo.
+A classe \classname{DealMessage} também pertence ao grupo de mensagens trocadas para
+transferência de estado. Essa classe abstrai uma proposta de acordo para transferir
+estado. Ela e uma sinalização para a réplica receptora, informa que existe uma réplica
+disposta a ser doadora do estado e que atende todas as exigências do contrato.
+
+Quanto mais mensagens propondo acordo na transferência a réplica receptora receber, menos
+restritivas são suas exigências e maior a chance de selecionar uma réplica votante.
 
 \subsubsubsection{GetMessage}
 
@@ -477,7 +489,7 @@ soluções para configuração do conjunto de réplicas não faz parte do escopo
 
 \subsubsubsection{WeakSecretary}
 
-A classe \classname{WeakSecretary} apresenta uma abstração de I/O sem persistência de
+<SNR>104_(count)A classe \classname{WeakSecretary} apresenta uma abstração de I/O sem persistência de
 dados em disco. Esse componente é uma versão leve da classe \classname{Secretary}
 (\autoref{subsec:secretary}), ela é utilizada pelos agentes de Paxos para enviar mensagens
 pela rede, através do intermédio do componente \classname{Transport}
