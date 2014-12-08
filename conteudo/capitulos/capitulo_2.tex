@@ -216,7 +216,7 @@ consenso pretendida.
   \item Somente réplicas leitoras: essa política é mais restritiva, busca um acordo com
     uma réplica leitora \footnote{Réplicas leitoras são aquelas onde apenas os agentes
     proponente e aprendiz estão em execução. Elas não assumem um papel fundamental na
-    execução de Paxos. Trataremos réplicas leitoras na \autoref{sec:replicas_leitoras}.
+    execução de Paxos. Trataremos réplicas leitoras na \autoref{sec:replicas_leitoras}}.
     Acordos com réplica leitoras são preferíveis devido à restrição de sincronia exigida
     pelo protocolo. Dessa forma, essa política tenta minimizar possíveis impactos na
     computação de Paxos.
@@ -272,33 +272,55 @@ Todas as classes de mensagem implementam a interface de marcação
 \subsubsubsection{PolicyMessage}
 
 A classe \classname{PolicyMessage} é a primeira mensagem do protocolo para transferência
-de estado. Essa classe além de sinalizar para as outras réplicas o interesse existente de
-uma réplica em receber um estado, contém todas as informações sobre o estado pretendido
-pela réplica receptora. Os dados contratuais são abstraídos pela classe
-\classname{Policy}. Essa classe por sua vez, contém o número da instância de consenso
-desejado e uma lista de regras que uma réplica deve obedecer para ser uma doadora.
+de estado. Essa classe além de sinalizar para as outras réplicas do grupo que existe uma
+réplica interessada em receber um estado, contém todas as informações sobre o estado
+pretendido pela réplica receptora.
+
+Os dados contratuais são abstraídos pela classe \classname{Policy}. Essa classe por sua
+vez, contém o número da instância de consenso desejado (informação mínima para proposta de
+um acordo) e uma lista de regras qualificadoras, que uma réplica deve atender para ser uma
+doadora.
 
 \subsubsubsection{DealMessage}
 
-A classe \classname{DealMessage} também pertence ao grupo de mensagens trocadas para
-transferência de estado. Essa classe abstrai uma proposta de acordo para transferir
-estado. Ela e uma sinalização para a réplica receptora, informa que existe uma réplica
-disposta a ser doadora do estado e que atende todas as exigências do contrato.
-
-Quanto mais mensagens propondo acordo na transferência a réplica receptora receber, menos
-restritivas são suas exigências e maior a chance de selecionar uma réplica votante.
+A classe \classname{DealMessage} também pertence ao grupo de mensagens trocadas pelo
+protocolo de transferência. Essa classe abstrai uma proposta de acordo. Ela é uma
+sinalização para a réplica receptora, informa a existência de uma réplica disposta a dor
+seu estado (réplica doadora está em conformidade com a política estabelecida pela réplica
+receptora). Quanto mais mensagens propondo acordo de transferência uma réplica receptora
+receber, menos restritivas são suas políticas, potencializando a seleção de uma réplica
+votante.
 
 \subsubsubsection{GetMessage}
 
-Descrever todos os componentes alterados para a utilização desse mecanismo.
+A classe \classname{GetMessage} é a abstração da mensagem de pedido de estado enviada
+somente para a réplica doadora. As informações do endereço para envio do estado (através
+de \emph{socket} TCP) é extraído dessa mensagem.
 
 \subsubsubsection{StateMessage}
 
-Descrever todos os componentes alterados para a utilização desse mecanismo.
+A classe \classname{StateMessage} é a abstração do estado enviado da réplica doadora para
+a réplica receptora. Essa classe possuí como atributos o número da instância de consenso
+(último decreto que causou alteração no estado) e um estado no formato
+\classname{java.io.Serializable}. Definimos essa classe como uma cópia instantânea, tirada
+no no período que a réplica está bloqueada para alterações.
+
+A partir do conteúdo armazenado por \classname{StateMessage}, qualquer réplica que possuí
+uma visão de estado menor \footnote{Podemos supor comparações de estados através da última
+instância de consenso, já que o mesmo é um limiar crescente \cite{vieira-10b}.} pode se
+beneficiar da substituição de seu estado local corrente (desatualizado) por um mais atual,
+com potencial chance de ser o estado corrente compartilhado pela maioria grupo, conforme
+especificação de Paxos.
 
 \subsubsubsection{Diplomat}
 
-Descrever todos os componentes alterados para a utilização desse mecanismo.
+A classe \classname{Diplomat} implementa o tratamento das mensagens do protocolo. Toda a
+réplica possui uma instância da classe \classname{Diplomat} para representar seus
+interesses frente outras réplicas. A abstração desse componente foi inspirada nas funções
+de diplomacia (ciência e arte referentes às relações entre estados \cite{aurelio})
+exercidas por um Diplomata no modelo atual de relação entre nações \footnote{Segundo
+\citeonline{aurelio}, diplomata é um funcionário que representa um governo junto de outro
+governo.}.
 
 \subsubsection{Política de Reconfiguração}
 
@@ -489,7 +511,7 @@ soluções para configuração do conjunto de réplicas não faz parte do escopo
 
 \subsubsubsection{WeakSecretary}
 
-<SNR>104_(count)A classe \classname{WeakSecretary} apresenta uma abstração de I/O sem persistência de
+A classe \classname{WeakSecretary} apresenta uma abstração de I/O sem persistência de
 dados em disco. Esse componente é uma versão leve da classe \classname{Secretary}
 (\autoref{subsec:secretary}), ela é utilizada pelos agentes de Paxos para enviar mensagens
 pela rede, através do intermédio do componente \classname{Transport}
