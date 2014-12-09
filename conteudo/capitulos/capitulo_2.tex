@@ -266,8 +266,15 @@ protocolo com suas respectivas trocas de mensagens.
 
 \subsubsection{Componentes alterados}
 
-Todas as classes de mensagem implementam a interface de marcação
-\classname{StateTransferMessage}.
+O protocolo de transferencia de estados possui quatro mensages que sao representadas pelas
+classes \classname{PolicyMessage}, \classname{DealMessage}, \classname{GetMessage} e
+\classname{StateMessage}. Todas essas classes implementam a interface de marcacao
+\classname{StateTransferMessage}, possibilidando assim, distinguir as mesagens do
+protocolo das mensages de Paxos.
+
+Todas as mensages do protocolo sao roteadas no {main loop} de cada replica para a classe
+\classname{Diplomat}, responsavel pelo tratamento dessas mensagens, independente da
+configuracao da replica.
 
 \subsubsubsection{PolicyMessage}
 
@@ -314,25 +321,44 @@ especificação de Paxos.
 
 \subsubsubsection{Diplomat}
 
-A classe \classname{Diplomat} implementa o tratamento das mensagens do protocolo. Toda a
-réplica possui uma instância da classe \classname{Diplomat} para representar seus
-interesses frente outras réplicas. A abstração desse componente foi inspirada nas funções
-de diplomacia (ciência e arte referentes às relações entre estados \cite{aurelio})
-exercidas por um Diplomata no modelo atual de relação entre nações \footnote{Segundo
-\citeonline{aurelio}, diplomata é um funcionário que representa um governo junto de outro
-governo.}.
+A classe \classname{Diplomat} eh reponsavel por implementar o tratamento das mensagens do
+protocolo de trasferencia. Toda réplica, independente da configuracao, possui uma
+instância da classe \classname{Diplomat} para representar seus interesses frente outras
+réplicas. A abstração desse componente foi inspirada nas funções de diplomacia (ciência e
+arte referentes às relações entre Estados \cite{aurelio}) exercidas por um Diplomata no
+modelo atual de relação entre nações \footnote{Segundo \citeonline{aurelio}, diplomata é
+um funcionário que representa um governo junto de outro governo.}.
+
+O Diplomata adequa sua funcao de trabalho conforme o estado corrente da replica. Em uma
+replica receptora, estah habilitado as funcoes responsaveis por obter um novo estado:
+criacao de politica, selecao de replica doadoa e abertura de socket TCP. Por outro lado,
+em uma replica doadora as funcoes para ceder um estado estao habilitadas: analise de
+aderencia a politica de transferencia, bloqueio de alteracoes de estado e envio de estado.
+
+Para selecao de melhor proposta para transferencia de estado, o Diplopmata armazena em
+memoria todas as propostas recebidas e apos o estouro de um \emph{timeout}
+pre-estabelecido, a selecao eh realizada. Consideramos como melhor proposta de estado
+aquela que possui maiora instancia de consenso. Em caso de eventuais erros e/ou
+\emph{timeouts} as propostas saoa removidas para evitar conflitos com as futuras propostas
+devido o mecanismo de reinicializacao.
 
 \subsubsection{Política de Reconfiguração}
 
-Primeiramente, estamos interessados em transferir estado quando trabalhamos com operações
-de expansão em um aglomerado (\autoref{fig:inclusao}). Alguns aspecto precisam ser
-considerados: (1) o estado da nova réplica está defasado com relação ao estado das
-réplicas participantes do grupo. É imprescindível que essa defasagem seja suprimida; (2) a
-operação de equiparação de estados deve gerar estados consistente; (3) o impacto gerado
-para o processamento do aglomerado deve ser mínimo. Para justificar a inclusão de uma nova
-réplica, obrigatoriamente é preciso geração de benefícios para o processamento em grupo,
-caso contrário estamos executando operações sem serventia com potencial para saturar o
-sistema.
+Identificamos dois potenciais pontos que se beneficiariam da utilizacao do protocolod e
+tranferencia de estado: (1) expansao do aglomerado e (2) recuperacao de erros. Para a
+construcao desse trabalho, focamos na aplicacao do protocolo para expansão do aglomerado
+(\autoref{fig:inclusao}). Supomos alguns aspecto para serem considerados: 
+
+\begin{itemize}
+  \item O estado da nova réplica está defasado com relação ao estado das réplicas
+    participantes do grupo. É imprescindível que essa defasagem seja suprimida.
+  \item A operação de equiparação de estados deve gerar estados consistente.
+  \item O impacto gerado para o processamento do aglomerado deve ser mínimo.
+\end{itemize}
+
+Para justificar a inclusão de uma nova réplica, obrigatoriamente é preciso geração de
+benefícios para o processamento em grupo, caso contrário estamos executando operações sem
+serventia com potencial para saturar o sistema.
 
 \begin{figure}[ht]
   \centering
@@ -341,10 +367,18 @@ sistema.
   \label{fig:inclusao}
 \end{figure}
 
-O mecanismo descrito na seção anterior deve ser regido por uma política de criação e
-remoção de réplicas leitoras. A  motivação por trás da criação de réplicas leitoras é
-permitir que o sistema reaja de forma autônoma a picos de carga sem comprometer o
-desempenho do mesmo. No entanto, sem uma política cuidadosa de reconfiguração corre-se o
+\citeonline{lamport10} apresenta em seu trabalho um mecanismo para reconfiguracao que pode
+ser aplicados em replicas vontantes atraves da criacao de diversas formacoes de grupos
+representados por visoes, controladas por um identificador sequencial. Como estamos
+trabalhando no modelo computacional assincrono com falha-e-recuperacao, a aplicacao dessa
+proposta eh complexa, pois se pegarmos um instante no tempo, diferentes visoes podem estar
+sendo executadas em paralelo com a visao corrente (visao com maior identicador).
+
+Investimos nosso esforco na construcao de um mecanismo que fugia da complexidade do
+mecanismo de visoes, consequentemente evitamos reconfigurar replicas votantes e focamos na
+criacao e remocao de replicas leitoras. A  motivação por trás da criação de réplicas
+leitoras é permitir que o sistema reaja de forma autônoma a picos de carga sem comprometer
+o desempenho do mesmo. No entanto, sem uma política cuidadosa de reconfiguração corre-se o
 risco de gastar muitos dos recursos do sistema no próprio processo de reconfiguração,
 anulando quaisquer ganhos advindos do acréscimo de novas réplicas leitoras.
 
