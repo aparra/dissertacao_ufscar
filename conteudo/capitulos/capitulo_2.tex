@@ -266,15 +266,15 @@ protocolo com suas respectivas trocas de mensagens.
 
 \subsubsection{Componentes alterados}
 
-O protocolo de transferencia de estados possui quatro mensages que sao representadas pelas
-classes \classname{PolicyMessage}, \classname{DealMessage}, \classname{GetMessage} e
-\classname{StateMessage}. Todas essas classes implementam a interface de marcacao
-\classname{StateTransferMessage}, possibilidando assim, distinguir as mesagens do
-protocolo das mensages de Paxos.
+O protocolo de transferência de estados possui quatro mensagens que são representadas
+pelas classes \classname{PolicyMessage}, \classname{DealMessage}, \classname{GetMessage} e
+\classname{StateMessage}. Todas essas classes implementam a interface de marcação
+\classname{StateTransferMessage}, possibilitando assim, distinguir as mensagens do
+protocolo das mensagens de Paxos.
 
-Todas as mensages do protocolo sao roteadas no {main loop} de cada replica para a classe
-\classname{Diplomat}, responsavel pelo tratamento dessas mensagens, independente da
-configuracao da replica.
+Todas as mensagens do protocolo são roteadas no \emph{main loop} de cada réplica para a
+classe \classname{Diplomat}, responsável pelo tratamento dessas mensagens, independente da
+configuração existente na réplica.
 
 \subsubsubsection{PolicyMessage}
 
@@ -321,38 +321,41 @@ especificação de Paxos.
 
 \subsubsubsection{Diplomat}
 
-A classe \classname{Diplomat} eh reponsavel por implementar o tratamento das mensagens do
-protocolo de trasferencia. Toda réplica, independente da configuracao, possui uma
+A classe \classname{Diplomat} é responsável por implementar o tratamento das mensagens do
+protocolo de trasferência. Toda réplica, independente da configuração, possui uma
 instância da classe \classname{Diplomat} para representar seus interesses frente outras
 réplicas. A abstração desse componente foi inspirada nas funções de diplomacia (ciência e
 arte referentes às relações entre Estados \cite{aurelio}) exercidas por um Diplomata no
 modelo atual de relação entre nações \footnote{Segundo \citeonline{aurelio}, diplomata é
 um funcionário que representa um governo junto de outro governo.}.
 
-O Diplomata adequa sua funcao de trabalho conforme o estado corrente da replica. Em uma
-replica receptora, estah habilitado as funcoes responsaveis por obter um novo estado:
-criacao de politica, selecao de replica doadoa e abertura de socket TCP. Por outro lado,
-em uma replica doadora as funcoes para ceder um estado estao habilitadas: analise de
-aderencia a politica de transferencia, bloqueio de alteracoes de estado e envio de estado.
+O Diplomata adéqua suas funções de trabalho conforme o estado corrente da replica. Em uma
+réplica receptora, está habilitado as funções responsáveis por obter um novo estado:
+criação de política, seleção de réplica doadora e abertura de \emph{socket} TCP. Por outro
+lado, em uma réplica doadora as funções para ceder o estado é que estão habilitadas:
+análise de aderência a política de transferência, bloqueio de alterações de estado e o
+envio de estado.
 
-Para selecao de melhor proposta para transferencia de estado, o Diplopmata armazena em
-memoria todas as propostas recebidas e apos o estouro de um \emph{timeout}
-pre-estabelecido, a selecao eh realizada. Consideramos como melhor proposta de estado
-aquela que possui maiora instancia de consenso. Em caso de eventuais erros e/ou
-\emph{timeouts} as propostas saoa removidas para evitar conflitos com as futuras propostas
-devido o mecanismo de reinicializacao.
+Para seleção da melhor proposta de transferência de estado, o Diplomata armazena em
+memória todas as propostas recebidas e após o estouro de um \emph{timeout} estabelecido, a
+seleção é realizada. Consideramos como melhor proposta de estado aquela que possui maior
+instância de consenso. Em caso de eventuais erros e/ou \emph{timeouts} as propostas são
+removidas da memória para evitar conflitos com as futuras propostas de acordo, que serão
+recebidas devido atuação do mecanismo de reinicialização.
 
 \subsubsection{Política de Reconfiguração}
 
-Identificamos dois potenciais pontos que se beneficiariam da utilizacao do protocolod e
-tranferencia de estado: (1) expansao do aglomerado e (2) recuperacao de erros. Para a
-construcao desse trabalho, focamos na aplicacao do protocolo para expansão do aglomerado
-(\autoref{fig:inclusao}). Supomos alguns aspecto para serem considerados: 
+Identificamos dois potenciais pontos que se beneficiariam da utilização do protocolo de
+transferência de estado: (1) expansão do aglomerado e (2) recuperação de erros. Para a
+construção desse trabalho, focamos na aplicação do protocolo na expansão do aglomerado,
+conforme ilustra a \autoref{fig:inclusao}. Supomos alguns aspecto para serem considerados:
 
 \begin{itemize}
-  \item O estado da nova réplica está defasado com relação ao estado das réplicas
-    participantes do grupo. É imprescindível que essa defasagem seja suprimida.
-  \item A operação de equiparação de estados deve gerar estados consistente.
+  \item O estado da nova réplica que deseja se juntar ao aglomerado está defasado com
+    relação ao estado das réplicas que já participam do grupo. É imprescindível que essa
+    defasagem seja suprimida.
+  \item A operação para igualar o estado da nova réplica com o estado compartilhado pelo
+    grupo deve ser consistente.
   \item O impacto gerado para o processamento do aglomerado deve ser mínimo.
 \end{itemize}
 
@@ -367,20 +370,22 @@ serventia com potencial para saturar o sistema.
   \label{fig:inclusao}
 \end{figure}
 
-\citeonline{lamport10} apresenta em seu trabalho um mecanismo para reconfiguracao que pode
-ser aplicados em replicas vontantes atraves da criacao de diversas formacoes de grupos
-representados por visoes, controladas por um identificador sequencial. Como estamos
-trabalhando no modelo computacional assincrono com falha-e-recuperacao, a aplicacao dessa
-proposta eh complexa, pois se pegarmos um instante no tempo, diferentes visoes podem estar
-sendo executadas em paralelo com a visao corrente (visao com maior identicador).
+\citeonline{lamport10} apresenta em seu trabalho um mecanismo para reconfiguração que pode
+ser aplicados em réplicas votantes, através da criação de diferentes formações de grupos
+representados por visões, controladas por um identificador sequencial. Como estamos
+trabalhando no modelo computacional assíncrono com falha-e-recuperação, a aplicação dessa
+proposta é complexa. Se analisarmos um instante no tempo, diferentes visões poderão estar
+sendo executadas simultaneamente com a visão corrente (visão com maior identificador). O
+gerenciamento dessas visões e a formação de diferentes grupos não é uma tarefa trivial.
 
-Investimos nosso esforco na construcao de um mecanismo que fugia da complexidade do
-mecanismo de visoes, consequentemente evitamos reconfigurar replicas votantes e focamos na
-criacao e remocao de replicas leitoras. A  motivação por trás da criação de réplicas
-leitoras é permitir que o sistema reaja de forma autônoma a picos de carga sem comprometer
-o desempenho do mesmo. No entanto, sem uma política cuidadosa de reconfiguração corre-se o
-risco de gastar muitos dos recursos do sistema no próprio processo de reconfiguração,
-anulando quaisquer ganhos advindos do acréscimo de novas réplicas leitoras.
+Investimos nosso esforço na construção de um mecanismo que tenta fugir da complexidade do
+mecanismo de visões proposto por \citeonline{lamport10}, consequentemente evitamos
+reconfigurações em réplicas votantes e focamos na criação e remoção de réplicas leitoras.
+A motivação por trás da criação de réplicas leitoras é permitir que o sistema reaja de
+forma autônoma a picos de carga sem comprometer o desempenho do mesmo. No entanto, sem uma
+política cuidadosa de reconfiguração corre-se o risco de gastar muitos dos recursos do
+sistema no próprio processo de reconfiguração, anulando quaisquer ganhos advindos do
+acréscimo de novas réplicas leitoras.
 
 A política de reconfiguração deve, desta forma, ser um equilíbrio entre o custo de se
 instanciar uma nova réplica leitora e os ganhos de desempenho a serem auferidos após esta
