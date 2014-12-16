@@ -1,8 +1,39 @@
 \chapter{Treplica Reconfigurável}\label{cap2}
 
-Descrever a proposta e sua implementação.
+Cobiçamos para Treplica um mecanismo de autogestão capaz de realizar autointegração de
+réplicas sem intervenção humana, inteligente o suficiente para detectar oscilação na
+demanda e reagir a elas, proporcionando assim maior eficiência na utilização de recursos
+físicos. Projetar mecanismos autônomos sintonizados para reagir rapidamente às mudanças no
+sistema é um assunto atual e relevante para pesquisa.
 
-\section{Visão arquitetural de Treplica}
+O primeiro passo para suportar tal anseio é dado neste presente trabalho, que tem como
+objetivo transformar Treplica em uma biblioteca reconfigurável. O problema de
+reconfiguração é complexo, principalmente na presença de falhas e assincronia. Sua
+resolução é obtida basicamente a partir de duas maneiras: (1) Abordagem baseada em
+transições de visões do conjunto de réplicas participantes (e corretas) \cite{birman87a,
+birman87b}; (2) Definição, via consenso, de uma nova configuração a partir da construção
+de uma barreira que, quando alcançada pelas réplicas, faz com que elas abandonem a
+configuração vigente e ingressem na nova configuração definida (caso elas façam parte
+dela) \cite{lamport10}.
+
+Para o processo de reconfiguração, identificamos a necessidade de um mecanismo eficiente
+capaz de transferir estado entre réplicas. Treplica ainda não possui tal mecanismo capaz
+de oferecer um poder de manobra para adição de novas réplicas e recuperação de falhas.
+Estamos preocupados com o impacto inerente para implantar uma nova réplica em um
+aglomerado em tempo de execução. Se perceptível tal impacto dificulta a viabilidade das
+técnicas de autogestão, porque dependendo do cenário adicionar uma nova réplica pode
+comprometer o desempenho de um sistema sobrecarregado \cite{vilaca09}.
+
+Neste capítulo apresentamos os principais componentes de Treplicas que serão de
+fundamental importância para compreender as alterações propostas na biblioteca. Na
+\autoref{sec:visao_arquitetural}, começamos definindo componentes fundamentais na
+arquitetura de Trepica. A \autoref{sec:componentes_paxos} examina detalhadamente os
+componentes utilizados para construção do algoritmo Paxos. Em seguida, na
+\autoref{sec:alteracoes_propostas} apresentamos minunciosamente as alterações e os novos
+componentes propostos para Treplica.
+
+
+\section{Visão arquitetural de Treplica}\label{sec:visao_arquitetural}
 
 Introdução da arquitetura de treplica
 
@@ -74,7 +105,7 @@ eventos caracterizando uma arquitetura de processamento assíncrono baseada em e
 apoio e, também, inicializar a PaxosPersistentQueue.
 
 
-\subsection{Componentes de Paxos}
+\subsection{Componentes de Paxos}\label{sec:componentes_paxos}
 
 Falar sobre a abstração dos componentes de Paxos
 
@@ -112,7 +143,7 @@ uma nova rodada por intermédio do agente \emph{coordenador}.
 Colocar mais testo aqui!!!
 
 
-\section{Alterações propostas}
+\section{Alterações propostas}\label{sec:alteracoes_propostas}
 
 Apresentamos, exaustivamente, os conceitos utilizados para criação da biblioteca Treplica,
 os detalhes de seus componentes e como eles estão relacionados. A partir de agora, iremos
@@ -586,7 +617,7 @@ Em particular, a adição ou remoção de uma réplica leitora não altera o nú
 receptores executando o algoritmo, não havendo necessidade de se realizar um
 reconfiguração custosa \cite{lamport10}.
 
-\subsection{Transferencia de estado para recuperacao de falhas}
+\subsection{Transferência de estado para recuperação de falhas}
 
 Treplica possui outro potencial candidato para empregar o protocolo de transferência: o
 componente detector lacunas na sequência de instâncias de consenso. Lacunas podem surgir
