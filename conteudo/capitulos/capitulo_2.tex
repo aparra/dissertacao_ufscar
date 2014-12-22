@@ -39,32 +39,43 @@ Introdução da arquitetura de treplica
 
 \subsection{Componentes de suporte}
 
-Em treplica, os módulos de suporte sao uma abstração de mecanismos subjacente a Paxos,
-claramente definidos por interfaces e garantia de serviços. Essas garantias são muito
-simples e pode ser diretamentes mapeado para muitos tipos de redes e semântica de
-armazenamento estáveis. A principal motivação foi simplificar a API utilizada pelos
-agentes Paxos, escondendo detalhes sobre processo de \emph{endereçamento}, envio de
-mensagens \emph{multicast} e \emph{unicast}, gerenciamento de memória, gestão de I/O e
-detecção de falhas.
+Em Treplica, os módulos de suporte são uma abstração dos mecanismos subjacente a Paxos,
+claramente definidos por interfaces que oferecem a flexibilidade necessária, caso seja
+necessário, para substituir o comportamento de um componente. A principal motivação para
+essa segregação foi simplificar a API utilizada pelos agentes Paxos. Dessa forma
+encapsulamos os detalhes sobre \emph{endereçamento de réplicas}, envio de mensagens
+\emph{multicast} e \emph{unicast}, gerenciamento de memória não volátil (disco) e detecção
+de falhas.
 
 \subsubsection{Transport}\label{subsec:transport}
 
-A abstracao de transporte eh definida pela interface \classname{Transport}. Ele oferece a
-seus clientes um mecanismo de envio e recebimento de mensanges \emph{multicast} e
-\emph{unicast}, que estah alinhado com as propriedades de rede esperados em um sistema
-assincrono. As mensagens sao trocadas de maneira confiavel, e podem ser entregues fora da
-ordem, duplicadas ou podem ser perdidas. A falta de garantias no componente de transporte
-eh motivado por duas razoes: (1) ele corresponde as exigencias da rede de muitos
-algoritmos de consenso no modelo assincrono; e (2) reflete de perto as garantias
-efetivamente prestados pelo modelo de transporte de rede utilizado: UDP/IP.
+A abstração do transporte dados é definida pela interface \classname{Transport}. Ela
+oferece a seus clientes um mecanismo de envio e recebimento de mensagens \emph{multicast}
+e \emph{unicast}, suas propriedades estão alinhadas com as premissas da rede para uma
+aplicação construída no modelo computacional assíncrono:
 
-Como Paxos nao exige um modelo de transporte com propriedades de entrega de mensagens
-confiavel, pois essa propriedade eh implementada pelo proprio algoritimo (incluindo um
-mecanismo de buferizacao de mensagens e retransmissao). Se utilizarmos um mecanismo de
-transporte confiavel, iriamos duplicar essas propriedades. Alem disso, a entrega confiavel
-fornecida por um transporte como TCP/IP soh funciona para o modelo falha-sem-recuperacao.
-No modelo falha-e-recuperacao, o algoritmo de consenso ainda precisa verificar se as
-mensages foram entregues mesmo quando se usa TCP.
+\begin{itemize}
+  \item Mensagens são trocadas de maneira não confiável;
+  \item Podem ser entregues dora da ordem;
+  \item Podem ser duplicadas; ou
+  \item Podem ser perdidas;
+\end{itemize}
+
+A falta de garantias no componente de transporte é motivado por duas razoes: (1)
+correspondência com as exigências da rede imposta por muitos algoritmos de consenso no
+modelo assíncrono, incluindo Paxos; e (2) reflete de perto as garantias efetivamente
+prestadas pelo modelo de transporte de rede utilizado pelo componente: UDP/IP.
+
+Como Paxos não exige um modelo de transporte com propriedades de entrega de mensagens
+confiável, pois essa propriedade está intrinsecamente implementada pelo próprio algoritmo
+(incluindo mecanismos de buferização de mensagens e retransmissão). Se utilizarmos um
+mecanismo de transporte confiável, duplicaremos as propriedades para garantia de
+confiabilidade. Além disso, a entrega confiável fornecida por um transporte como TCP/IP só
+funciona para o modelo de falhas falha-e-para \cite{abdellatif04} \footnote{No modelo
+falha-e-para, um processo não tem capacidade de se recuperar de uma falha, ou seja, a
+partir do momento que o processo falha ele permanecerá falho até o infinito
+\cite{cachin11}}. No modelo falha-e-recuperação, o algoritmo de consenso ainda precisa
+verificar se as mensagens foram entregues mesmo quando se usa TCP.
 
 \subsubsection{Ledger}
 
@@ -128,45 +139,45 @@ apoio e, também, inicializar a PaxosPersistentQueue.
 \subsection{Componentes de Paxos}\label{sec:componentes_paxos}
 
 Em Treplica, os componentes (agentes) de Paxos efetivamente implementam o algoritmo Paxos.
-Essa implementacao eh baseada na especificação do algoritmo e são responsáveis pelo seu
+Essa implementação é baseada na especificação do algoritmo e são responsáveis pelo seu
 correto funcionamento. Eles utilizam os componentes de suporte descritos nas seções
 anteriores.
 
 \subsubsection{Election}
 
 Esse agente é responsável pela eleição do líder requerido pelo protocolo Paxos para
-garatir progresso no algoritmo. Ele expõe a seus clientes a interface de um \Omega
+garantir progresso no algoritmo. Ele expõe a seus clientes a interface de um \Omega
 detector de falhas. Resumidamente, esse detector de falhas requer que qualquer agente de
-eleição confie em uma replica do sistema como correta e que existe um tempo, nao
-deterministico, em que todos os agentes de eleição confiarao na mesma replica
-\cite{chandra96}. Se a replica em que todas os agentes acreditam estar correta executar o
-agente coordenador, a propriedade de \emph{liveness} eh garantida. 
+eleição confie em uma réplica do sistema como correta e que existe um tempo, não
+determinístico, em que todos os agentes de eleição confiarão na mesma réplica
+\cite{chandra96}. Se a réplica em que todas os agentes acreditam estar correta executar o
+agente coordenador, a propriedade de \emph{liveness} é garantida.
 
-Por definicao, Paxos deve ter um único agente coordenador em execução. O agente de eleição
+Por definição, Paxos deve ter um único agente coordenador em execução. O agente de eleição
 não exige que os clientes consulte seu serviço para perceber mudanças de liderança.
-Especificamente, ele eh capaz de detectar quando a replica eh eleita como lider e inicia a
-execucao do agente coordenador em resposta a este evento. Por outro lado, quando ele
-detecta que a replica deixou a lideranca e pára o agente coordenador.
+Especificamente, ele é capaz de detectar quando a réplica é eleita como líder e inicia a
+execução do agente coordenador em resposta a esse evento. Por outro lado, quando ele
+detecta que a réplica deixou a liderança o agente coordenador é parado.
 
 \subsubsection{Learner}
 
-O agente aprendiz em Treplica implementa as funcionalidades de aprendizado e proponente
-propostas pro Paxos. Ele eh responsavel por: (1) tratamento das requisicoes oriundas da
-fila persistente dos clientes; (2) criacao de propostas que encapsulam essas requisicoes;
-e (3) acompanhamento das propostas ateh que elas sejam ordenadas e entregues.
+O agente aprendiz em Treplica implementa as funcionalidades de aprendizado e proponente de
+Paxos. Ele é responsavel por: (1) tratamento das requisições oriundas da fila persistente
+dos clientes; (2) criação de propostas que encapsulam essas requisições; e (3)
+acompanhamento das propostas até que elas sejam ordenadas e entregues.
 
 Para entender por que há uma combinação entre a funcionalidade desses dois agentes no
-mesmo módulo, basta observar as atividades realizadas por este agente. É possível
-classificar as duas primeiras tarefas como pertencente ao agente proponente e só a última
-tarefa como atividades do aluno. No entanto, a terceira tarefa é fundamental para
-o funcionamento correcto da nossa implementação da fila persistente Paxos e exige
+mesmo módulo, basta observar as atividades realizadas por esse agente. É possível
+classificar as duas primeiras tarefas como pertencentes ao agente proponente e só a última
+tarefa como atividades do aprendiz. No entanto, a terceira tarefa é fundamental para
+o funcionamento correto da implementação de Treplica utilizando a fila persistente e exige
 conhecimento detido por ambos proponente e aprendiz. Isso acontece porque Treplica
-suporta Paxos e \emph{Fast Paxos} \cite{lamport06a} na mesma implementacao e Fast Paxos
+suporta Paxos e \emph{Fast Paxos} \cite{lamport06a} na mesma implementação e Fast Paxos
 retira do agente coordenador a responsabilidade exclusiva de propor valores para consenso.
 
-A comparacao de Paxos e Fast Paxos, nem taopouco a diferenca de implementacao entre os
-dois algoritmos nao faz parte desse trabalho. Para maiores detalhes consulte
-\citeonline{vieira09}.
+A diferença de implementação entre Paxos e Fast Paxos, nem tampouco a comparação de
+desempenho entre os dois algoritmos não fazem parte desse trabalho. Para maiores detalhes
+consulte \citeonline{vieira09}.
 
 \subsubsection{Coordinator}
 
@@ -197,16 +208,13 @@ uma nova rodada por intermédio do agente \emph{coordenador}.
 
 O receptor é um agente responsável pela votação das propostas de consenso do algoritmo
 Paxos. Este agente reflete muito de perto o comportamento de Paxos descrito no
-\autoref{cap1:replicacao_ativa_paxos}. Trata-se principalmente com a própria segurança do
-algoritmo. 
-
-O agente receptor aguarda pela mensagem da Fase 1a que inicia uma nova rodada de consenso
-e responde, se for o caso, com o valor do consenso da rodada passada. Isso permite que a
-rodada progrida e habilita o receptor a votar nessa rodada, assim que receber a mensagem
-adequada na Fase 2a. Em Treplica esse comportamento tem apenas duas pequenas modificações
-que aumentam o desempenho do sistema: (1) o receptor reduz o voto para uma pequena
-mensagem de tamanho constante e (2) ele avisa ativamente o coordenador sobre instâncias
-consensos decididas.
+\autoref{cap1:replicacao_ativa_paxos}. O agente receptor aguarda pela mensagem da Fase 1a
+que inicia uma nova rodada de consenso e responde, se for o caso, com o valor do consenso
+da rodada anterior. Isso permite que a rodada progrida e habilita o receptor a votar na
+rodada corrente, assim que receber a mensagem adequada na Fase 2a. Em Treplica esse
+comportamento tem apenas duas pequenas modificações que aumentam o desempenho do sistema
+\cite{vieira-tr10b}: (1) o receptor reduz o voto para uma pequena mensagem de tamanho
+constante e (2) ele avisa ativamente o coordenador sobre instâncias consensos decididas.
 
 \section{Alterações propostas}\label{sec:alteracoes_propostas}
 
