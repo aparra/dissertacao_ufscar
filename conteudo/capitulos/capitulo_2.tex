@@ -39,11 +39,32 @@ Introdução da arquitetura de treplica
 
 \subsection{Componentes de suporte}
 
-Comentar sobre a abstração dos componentes de suporte
+Em treplica, os módulos de suporte sao uma abstração de mecanismos subjacente a Paxos,
+claramente definidos por interfaces e garantia de serviços. Essas garantias são muito
+simples e pode ser diretamentes mapeado para muitos tipos de redes e semântica de
+armazenamento estáveis. A principal motivação foi simplificar a API utilizada pelos
+agentes Paxos, escondendo detalhes sobre processo de \emph{endereçamento}, envio de
+mensagens \emph{multicast} e \emph{unicast}, gerenciamento de memória, gestão de I/O e
+detecção de falhas.
 
 \subsubsection{Transport}\label{subsec:transport}
 
-\subsubsection{Change Log}
+A abstracao de transporte eh definida pela interface \classname{Transport}. Ele oferece a
+seus clientes um mecanismo de envio e recebimento de mensanges \emph{multicast} e
+\emph{unicast}, que estah alinhado com as propriedades de rede esperados em um sistema
+assincrono. As mensagens sao trocadas de maneira confiavel, e podem ser entregues fora da
+ordem, duplicadas ou podem ser perdidas. A falta de garantias no componente de transporte
+eh motivado por duas razoes: (1) ele corresponde as exigencias da rede de muitos
+algoritmos de consenso no modelo assincrono; e (2) reflete de perto as garantias
+efetivamente prestados pelo modelo de transporte de rede utilizado: UDP/IP.
+
+Como Paxos nao exige um modelo de transporte com propriedades de entrega de mensagens
+confiavel, pois essa propriedade eh implementada pelo proprio algoritimo (incluindo um
+mecanismo de buferizacao de mensagens e retransmissao). Se utilizarmos um mecanismo de
+transporte confiavel, iriamos duplicar essas propriedades. Alem disso, a entrega confiavel
+fornecida por um transporte como TCP/IP soh funciona para o modelo falha-sem-recuperacao.
+No modelo falha-e-recuperacao, o algoritmo de consenso ainda precisa verificar se as
+mensages foram entregues mesmo quando se usa TCP.
 
 \subsubsection{Ledger}
 
@@ -104,14 +125,48 @@ eventos caracterizando uma arquitetura de processamento assíncrono baseada em e
 (\emph{event-based}). É responsabilidade do Router instanciar agentes e componentes de
 apoio e, também, inicializar a PaxosPersistentQueue.
 
-
 \subsection{Componentes de Paxos}\label{sec:componentes_paxos}
 
-Falar sobre a abstração dos componentes de Paxos
+Em Treplica, os componentes (agentes) de Paxos efetivamente implementam o algoritmo Paxos.
+Essa implementacao eh baseada na especificação do algoritmo e são responsáveis pelo seu
+correto funcionamento. Eles utilizam os componentes de suporte descritos nas seções
+anteriores.
 
 \subsubsection{Election}
 
+Esse agente é responsável pela eleição do líder requerido pelo protocolo Paxos para
+garatir progresso no algoritmo. Ele expõe a seus clientes a interface de um \Omega
+detector de falhas. Resumidamente, esse detector de falhas requer que qualquer agente de
+eleição confie em uma replica do sistema como correta e que existe um tempo, nao
+deterministico, em que todos os agentes de eleição confiarao na mesma replica
+\cite{chandra96}. Se a replica em que todas os agentes acreditam estar correta executar o
+agente coordenador, a propriedade de \emph{liveness} eh garantida. 
+
+Por definicao, Paxos deve ter um único agente coordenador em execução. O agente de eleição
+não exige que os clientes consulte seu serviço para perceber mudanças de liderança.
+Especificamente, ele eh capaz de detectar quando a replica eh eleita como lider e inicia a
+execucao do agente coordenador em resposta a este evento. Por outro lado, quando ele
+detecta que a replica deixou a lideranca e pára o agente coordenador.
+
 \subsubsection{Learner}
+
+O agente aprendiz em Treplica implementa as funcionalidades de aprendizado e proponente
+propostas pro Paxos. Ele eh responsavel por: (1) tratamento das requisicoes oriundas da
+fila persistente dos clientes; (2) criacao de propostas que encapsulam essas requisicoes;
+e (3) acompanhamento das propostas ateh que elas sejam ordenadas e entregues.
+
+Para entender por que há uma combinação entre a funcionalidade desses dois agentes no
+mesmo módulo, basta observar as atividades realizadas por este agente. É possível
+classificar as duas primeiras tarefas como pertencente ao agente proponente e só a última
+tarefa como atividades do aluno. No entanto, a terceira tarefa é fundamental para
+o funcionamento correcto da nossa implementação da fila persistente Paxos e exige
+conhecimento detido por ambos proponente e aprendiz. Isso acontece porque Treplica
+suporta Paxos e \emph{Fast Paxos} \cite{lamport06a} na mesma implementacao e Fast Paxos
+retira do agente coordenador a responsabilidade exclusiva de propor valores para consenso.
+
+A comparacao de Paxos e Fast Paxos, nem taopouco a diferenca de implementacao entre os
+dois algoritmos nao faz parte desse trabalho. Para maiores detalhes consulte
+\citeonline{vieira09}.
 
 \subsubsection{Coordinator}
 
@@ -140,8 +195,18 @@ uma nova rodada por intermédio do agente \emph{coordenador}.
 
 \subsubsection{Acceptor}
 
-Colocar mais testo aqui!!!
+O receptor é um agente responsável pela votação das propostas de consenso do algoritmo
+Paxos. Este agente reflete muito de perto o comportamento de Paxos descrito no
+\autoref{cap1:replicacao_ativa_paxos}. Trata-se principalmente com a própria segurança do
+algoritmo. 
 
+O agente receptor aguarda pela mensagem da Fase 1a que inicia uma nova rodada de consenso
+e responde, se for o caso, com o valor do consenso da rodada passada. Isso permite que a
+rodada progrida e habilita o receptor a votar nessa rodada, assim que receber a mensagem
+adequada na Fase 2a. Em Treplica esse comportamento tem apenas duas pequenas modificações
+que aumentam o desempenho do sistema: (1) o receptor reduz o voto para uma pequena
+mensagem de tamanho constante e (2) ele avisa ativamente o coordenador sobre instâncias
+consensos decididas.
 
 \section{Alterações propostas}\label{sec:alteracoes_propostas}
 
@@ -273,9 +338,9 @@ estado de uma aplicação pode ser tão grande quanto a capacidade de memória d
 (2) todas as mensagens são trocadas utilizando o protocolo UDP.
 
 Optamos então pela utilização do protocolo TCP para transferência de estado cobiçando
-maior vazão dos dados nessa operação. Somente o estado é enviado via TCP, todas as outras
-mensagens pertencentes ao protocolo utilizam comunicação UDP, nativa de Treplica. Sendo
-assim, a réplica receptora abre um \emph{socket} TCP e envia a mensagem
+maior vazão dos dados nessa operação \cite{abdellatif04}. Somente o estado é enviado via
+TCP, todas as outras mensagens pertencentes ao protocolo utilizam comunicação UDP, nativa
+de Treplica. Sendo assim, a réplica receptora abre um \emph{socket} TCP e envia a mensagem
 \classname{GETMessage} para a réplica doadora com o endereço do \emph{socket} TCP
 recentemente aberto. Por sua vez, a réplica doadora bloqueia suas atividades e estabelece
 a conexão TCP com a réplica leitora. Finalmente a transferência de estado é executada.
