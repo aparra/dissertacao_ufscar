@@ -6,57 +6,67 @@ demanda e reagir a elas, proporcionando assim maior eficiência na utilização 
 físicos. Projetar mecanismos autônomos sintonizados para reagir rapidamente às mudanças no
 sistema é um assunto atual e relevante para pesquisa.
 
-O primeiro passo para suportar tal anseio é dado neste presente trabalho, que tem como
-objetivo transformar Treplica em uma biblioteca reconfigurável. O problema de
-reconfiguração é complexo, principalmente na presença de falhas e assincronia. Sua
-resolução é obtida basicamente a partir de duas maneiras: (1) Abordagem baseada em
-transições de visões do conjunto de réplicas participantes (e corretas) \cite{birman87a,
-birman87b}; (2) Definição, via consenso, de uma nova configuração a partir da construção
-de uma barreira que, quando alcançada pelas réplicas, faz com que elas abandonem a
-configuração vigente e ingressem na nova configuração definida (caso elas façam parte
-dela) \cite{lamport10}.
+O primeiro passo para suportar tal anseio é dado nesse trabalho, que tem como objetivo
+transformar Treplica em uma biblioteca reconfigurável. O problema de reconfiguração é
+complexo, principalmente na presença de falhas e assincronia. Sua resolução é obtida
+basicamente a partir de duas maneiras: (1) Abordagem baseada em transições de visões do
+conjunto de réplicas participantes (e corretas) \cite{birman87a, birman87b}; (2)
+Definição, via consenso, de uma nova configuração a partir da construção de uma barreira
+que, quando alcançada pelas réplicas, faz com que elas abandonem a configuração vigente e
+ingressem na nova configuração definida (caso elas façam parte dela) \cite{lamport10}.
 
 Para o processo de reconfiguração, identificamos a necessidade de um mecanismo eficiente
 capaz de transferir estado entre réplicas. Treplica ainda não possui tal mecanismo capaz
 de oferecer um poder de manobra para adição de novas réplicas e recuperação de falhas.
 Estamos preocupados com o impacto inerente para implantar uma nova réplica em um
 aglomerado em tempo de execução. Se perceptível tal impacto dificulta a viabilidade das
-técnicas de autogestão, porque dependendo do cenário adicionar uma nova réplica pode
+técnicas de autogestão, porque dependendo do cenário, adicionar uma nova réplica pode
 comprometer o desempenho de um sistema sobrecarregado \cite{vilaca09}.
 
 Neste capítulo apresentamos os principais componentes de Treplicas que serão de
-fundamental importância para compreender as alterações propostas na biblioteca. Na
-\autoref{sec:visao_arquitetural}, começamos definindo componentes fundamentais na
-arquitetura de Trepica. A \autoref{sec:componentes_paxos} examina detalhadamente os
-componentes utilizados para construção do algoritmo Paxos. Em seguida, na
-\autoref{sec:alteracoes_propostas} apresentamos minunciosamente as alterações e os novos
-componentes propostos para Treplica.
+fundamental importância para compreender as alterações propostas na biblioteca, que tambem
+estao contemplandas nesse capitulo. Comecamos com uma \autoref{sec:visao_arquitetural},
+nessa secao apresentamos os componentes de suporte fundamentais para arquitetura de
+Trepica e examinamos detalhadamente os componentes utilizados para construção do algoritmo
+Paxos. Em seguida, na \autoref{sec:alteracoes_propostas} apresentamos minunciosamente as
+alterações e os novos componentes propostos para Treplica.
 
 
 \section{Visão arquitetural de Treplica}\label{sec:visao_arquitetural}
 
-Introdução da arquitetura de treplica
+Treplica \cite{vieira08a, vieira-tr10b} é uma biblioteca de replicação em Java que permite
+construir aplicações distribuídas que atendam ao modelo de replicação ativa. A função
+principal desempenhada por Treplica é gerenciar o estado da aplicação, executando as
+requisições dos clientes através de uma abstração de uma \emph{máquina de estados
+replicada}. A ordenação das requisições antes da sua efetiva execução é feita por uma
+abstração de \emph{fila persistente assíncrona}, implementada atraves do algoritmo Paxos.
+
+Arquiteturalmente a biblioteca estah dividida em dois grandes grupos: (1) componentes de
+suporte e (2) componentes de Paxos. Essas duas macro estruturas serao apresentadas com
+detalhes a seguir, o foco dessa secao eh apresentar somente os componentes de Treplica que
+serao utilizados pelas alteracoes propostas na API, a descricao completa da biblioteca
+pode ser encontrada em \cite{vieira-tr10b}.
 
 \subsection{Componentes de suporte}
 
 Em Treplica, os módulos de suporte são uma abstração dos mecanismos subjacente a Paxos,
 claramente definidos por interfaces que oferecem a flexibilidade necessária, caso seja
-necessário, para substituir o comportamento de um componente. A principal motivação para
-essa segregação foi simplificar a API utilizada pelos agentes Paxos. Dessa forma
-encapsulamos os detalhes sobre \emph{endereçamento de réplicas}, envio de mensagens
-\emph{multicast} e \emph{unicast}, gerenciamento de memória não volátil (disco) e detecção
-de falhas.
+vantajoso, para substituir o comportamento de um componente. A principal motivação para
+essa segregação foi simplificar a API utilizada pelos agentes de Paxos. Dessa forma esses
+componentes encapsulam os detalhes inerentes sobre \emph{endereçamento de réplicas}, envio
+de mensagens \emph{multicast} e \emph{unicast}, gerenciamento de memória não volátil
+(disco) e detecção de falhas.
 
 \subsubsection{Transport}\label{subsec:transport}
 
-A abstração do transporte dados é definida pela interface \classname{Transport}. Ela
+A abstração do transporte de dados é definida pela interface \classname{Transport}. Ela
 oferece a seus clientes um mecanismo de envio e recebimento de mensagens \emph{multicast}
 e \emph{unicast}, suas propriedades estão alinhadas com as premissas da rede para uma
 aplicação construída no modelo computacional assíncrono:
 
 \begin{itemize}
   \item Mensagens são trocadas de maneira não confiável;
-  \item Podem ser entregues dora da ordem;
+  \item Podem ser entregues fora da ordem;
   \item Podem ser duplicadas; ou
   \item Podem ser perdidas;
 \end{itemize}
@@ -75,31 +85,34 @@ funciona para o modelo de falhas falha-e-para \cite{abdellatif04} \footnote{No m
 falha-e-para, um processo não tem capacidade de se recuperar de uma falha, ou seja, a
 partir do momento que o processo falha ele permanecerá falho até o infinito
 \cite{cachin11}}. No modelo falha-e-recuperação, o algoritmo de consenso ainda precisa
-verificar se as mensagens foram entregues mesmo quando se usa TCP.
+verificar se as mensagens foram entregues mesmo quando se usa TCP/IP.
 
 \subsubsection{Ledger}
 
-Ledger é a abstração do estado persistente para implementação de Paxos. É uma estrutura
-de dados comum, compartilhada por todos os agentes de Paxos, implementados por Treplica,
-que conseguem através de uma interface acessar a memória principal. A implementação dessa
-interface suporta persistência dos dados de forma não-volátil. Conforme definido no
-\autoref{cap1:replicacao_ativa_paxos}, é possível obter o mesmo estado replicado a partir
-das instâncias de consenso armazenadas em memória persistente. Assim, a abstração do
-Ledger concentra todos os dados de uma instância de consenso bem sucedido em memória
-persistente, facilmente acessível a partir da memória principal. A classe LoggingLedger é
-o objeto utilizado para persistir em log (disco) as alterações. Para simplificar o uso de
-log de alterações, esta implementação tem suporte para detectar e isolar as alterações
-feitas em seu estado interno. Pode gravar mudanças no estado e depois recuperá-la,
-reaplicando um conjunto de alterações previamente gravados. O Ledger armazena o estado
-completo de cada instância do consenso por réplica, mantendo todos os dados exigidos por
-todos os tipos de agentes de Paxos implementados por Treplica. Dessa forma, é possível que
-qualquer agente recupere seu estado, inclusive o coordenador.
+\classname{Ledger} é a abstração do estado persistente para implementação de Paxos. É uma
+estrutura de dados comum, compartilhada por todos os agentes de Paxos, implementados por
+Treplica, que conseguem através de uma interface acessar a memória principal. A
+implementação dessa interface suporta persistência dos dados de forma não-volátil.
+Conforme definido no \autoref{cap1:replicacao_ativa_paxos}, é possível obter o mesmo
+estado replicado a partir das instâncias de consenso armazenadas em memória persistente.
+Assim, a abstração do \classname{Ledger} concentra todos os dados de uma instância de
+consenso bem sucedido em memória persistente, facilmente acessível a partir da memória
+principal. 
+
+A classe \classname{LoggingLedger} é utilizada para persistir em log (disco) as
+alterações. Para simplificar o uso de log de alterações, esta implementação tem suporte
+para detectar e isolar as alterações feitas em seu estado interno. Pode gravar mudanças no
+estado e depois recuperá-la, reaplicando um conjunto de alterações previamente gravados. O
+\classname{Ledger} armazena o estado completo de cada instância do consenso por réplica,
+mantendo todos os dados exigidos por todos os tipos de agentes de Paxos implementados por
+Treplica. Dessa forma, é possível que qualquer agente recupere seu estado, inclusive o
+coordenador.
 
 \subsubsection{Secretary}\label{subsec:secretary}
 
-Secretary apresenta uma abstração unificada de I/O para os agentes de Paxos. Este
-componente utiliza memória persistente usando \emph{change log} e o Ledger, lida com a
-passagem de mensagens usando o componente de transporte e lida também com a fila de
+\classname{Secretary} apresenta uma abstração unificada de I/O para os agentes de Paxos.
+Este componente utiliza memória persistente usando o componente \classname{Ledger}, lida
+com a passagem de mensagens usando o componente de transporte e lida também com a fila de
 objetos utilizada para entregar objetos para a aplicação. A principal razão para criação
 dessa abstração em Treplica foi sintetizar as operações de I/O em \emph{threads}
 diferentes das que executam as operações de Paxos. Operações de I/O em disco, tem grande
@@ -107,25 +120,48 @@ potencial para reduzir o desempenho do algoritmo Paxos por duas razões: (1) tod
 requisições de escrita que estabeleceram consenso, devem ser persistidas de forma
 não-volátil antes do progresso do algoritmo. Premissa para garantir consistência; (2)
 alguns passos do algoritmo de Paxos podem demandar muito acesso a memória persistente.
-Considerando que cada operação de escrita em disco leva cerca de $1ms$ para ser concluída
-e que uma rodada de Paxos, pelo menos, requer duas escritas em memória estável, acabamos
-de adicionar uma latência de $2ms$ em todas as rodadas de consenso.
 
-Uma vez que o I/O é tratado apenas pelo Secretary de forma assíncrona é possível resolver
-o problema de falta de paralelismo entre as rodadas. Isso é feito através de uma fila de
-agrupamento de gravações lógicas distintas que retém os dados realizar uma única gravação
-física. Essa abordagem é vantajosa porque o tamanho dos dados de escrita no disco, utiliza
-uma \emph{sync() system call} causando um pouco latência na operação. A implementação d
-de Scretary absorve latência da \emph{system call} mantendo uma \emph{thread} separada
-para persistência dos dados.
+Uma vez que o I/O é tratado apenas pelo \classname{Secretary} de forma assíncrona é
+possível resolver o problema de falta de paralelismo entre as rodadas. Isso é feito
+através de uma fila de agrupamento de gravações lógicas distintas que retém os dados
+realizar uma única gravação física. Essa abordagem é vantajosa porque o tamanho dos dados
+de escrita no disco, utiliza uma \emph{sync() system call} causando um pouco de latência
+na operação. A implementação de \classname{Secretary} absorve a latência da \emph{system
+call} mantendo uma \emph{thread} separada para persistência dos dados.
+
+\subsubsection{PersistentQueue}
+
+O componente de fila persistente assincrona depende das abstracoes: ler/escrever em
+armazanamento estavel e enviar/receber mensagens pela rede. O serviço prestado por essas
+abstrações de baixo nível não sao definidas na especificação de Paxos. Assim, Treplica não
+assumi uma única implementação para o componente de fila persistente.
+
+Filas persistentes assíncronas são uma maneira para que um grupo de replicas e/ou
+componentes compartilhem informacoes na forma de objetos. Esses objetos são enviados por
+qualquer replica ligado à fila e sao transmitido para os outros, totalmente ordenados e
+com entrega garantida, independentemente de falhas. Esse comportamento pode ser mais
+precisamente descrito pelas seguintes propriedades:
+
+\begin{itemize}
+  \item Os objetos sao entregues na mesma ordem para otdos os processos.
+  \item Os objetos sao entregues para todos os processos, memo que um processo falhe e
+    mais tarde se recupere.
+  \item Objetos sao persitentes e sobrevivem a falhas de todos os processos.  
+\end{itemize}
+
+Em Treplica, esse comonente eh definida como uma interface genérica que pode ser
+implementada desde que respeite as propriedades definidas acima. Apesar da viabilidade de
+suportar diversas implementacoes, Treplica utiliza somente uma implementação baseada em
+consenso para o componente de fila persistente: \classname{PaxosPersistentQueue}.
 
 \subsubsection{Router}
 
-Router é um componente simples, mas vital para PaxosPersistentQueue, porque inicia todos
-os agentes em conjunto. Sua função principal é prover o \emph{main loop} da implementação
-de Paxos, que recebe mensagens do componente de transporte e, de acordo com seu tipo,
-encaminha para o agente apropriado. Dessa forma, a execução desse agente é sequencial e
-compartilha estruturas de dados, como o Ledger, não precisa de controle de concorrência.
+\classname{Router} é um componente simples, mas vital para classe
+\classname{PaxosPersistentQueue}, porque inicia todos os agentes em conjunto. Sua função
+principal é prover o \emph{main loop} da implementação de Paxos, que recebe mensagens do
+componente de transporte e, de acordo com o tipo, encaminha para o agente apropriado.
+Dessa forma, a execução desse agente é sequencial e compartilha estruturas de dados, como
+o \classname{Ledger}, não precisa de controle de concorrência.
 
 Esse é o único componente (\emph{thread}) que monitora o temporizador central e gera
 eventos de \emph{timer} \footnote{Os eventos de \emph{timer} simbolizam a passagem do
@@ -133,10 +169,10 @@ tempo para a aplicação. Esse evento atinge todos os componentes que necessitam
 relógio para seu correto funcionamento}. O código de processamento dos agentes não possuem
 operações que geram grandes bloqueios, eles são programados como simples manipuladores de
 eventos caracterizando uma arquitetura de processamento assíncrono baseada em eventos
-(\emph{event-based}). É responsabilidade do Router instanciar agentes e componentes de
-apoio e, também, inicializar a PaxosPersistentQueue.
+(\emph{event-based}). É responsabilidade do \classname{Router} instanciar agentes e
+componentes de apoio e, também, inicializar a \classname{PaxosPersistentQueue}.
 
-\subsection{Componentes de Paxos}\label{sec:componentes_paxos}
+\subsection{Componentes de Paxos}
 
 Em Treplica, os componentes (agentes) de Paxos efetivamente implementam o algoritmo Paxos.
 Essa implementação é baseada na especificação do algoritmo e são responsáveis pelo seu
@@ -181,11 +217,11 @@ consulte \citeonline{vieira09}.
 
 \subsubsection{Coordinator}
 
-Coordenador (\emph{coordinator}) é o agente responsável por conduzir a rodada de consenso.
-Ele é capaz de decidir, através da aplicação de uma regra local, se uma rodada foi bem
-sucedida ou não. A regra local do coordenador é baseada em quóruns de \emph{receptores} e
-exige que pelo menos $\lfloor n/2 \rfloor + 1$ receptores façam parte de uma rodada, onde
-$n$ é o número total de receptores na aplicação \cite{lamport98}.
+Coordenador é o agente responsável por conduzir a rodada de consenso. Ele é capaz de
+decidir, através da aplicação de uma regra local, se uma rodada foi bem sucedida ou não. A
+regra local do coordenador é baseada em quóruns de \emph{receptores} e exige que pelo
+menos $\lfloor n/2 \rfloor + 1$ receptores façam parte de uma rodada, onde $n$ é o número
+total de receptores na aplicação \cite{lamport98}.
 
 É permitido a existência de apenas um coordenador por rodada, em caso de falha na réplica
 que executa o agente coordenador, uma eleição de líder deve ser convocada para estabelecer
@@ -196,13 +232,13 @@ convocada novamente para restabelecer a unicidade de coordenador por rodada.
 
 \subsubsection{Proposer}
 
-Proponente (\emph{proposer}) são agentes capazes de propor valores. Os proponentes podem
-propor dois valores diferentes concorrentemente (condição de concorrência)
-\footnote{Também conhecida como condição de corrida, acontece quando diferentes processos
-em execução atuam sobre um estado compartilhado \cite{alguem}}, nesse caso suas propostas
-podem colidir inviabilizando o sucesso de uma rodada de consenso. Em caso de colisões,
-diferentes mecanismos podem ser implementados, para lida com essa situação Treplica inicia
-uma nova rodada por intermédio do agente \emph{coordenador}.
+Proponentes são agentes capazes de propor valores e podem propor dois valores diferentes
+concorrentemente (condição de concorrência) \footnote{Também conhecida como condição de
+corrida, acontece quando diferentes processos em execução atuam sobre um estado
+compartilhado \cite{goetz06}}, nesse caso suas propostas podem colidir inviabilizando o
+sucesso de uma rodada de consenso. Em caso de colisões, diferentes mecanismos podem ser
+implementados, para lida com essa situação Treplica inicia uma nova rodada por intermédio
+do agente coordenador.
 
 \subsubsection{Acceptor}
 
@@ -215,6 +251,16 @@ rodada corrente, assim que receber a mensagem adequada na Fase 2a. Em Treplica e
 comportamento tem apenas duas pequenas modificações que aumentam o desempenho do sistema
 \cite{vieira-tr10b}: (1) o receptor reduz o voto para uma pequena mensagem de tamanho
 constante e (2) ele avisa ativamente o coordenador sobre instâncias consensos decididas.
+
+\subsubsection{PaxosPersistentQueue}
+
+\classname{PaxosPersistentQueue} eh responsável por agrupar todos os agentes de Paxos.
+Essa classe possui o \emph{main loop} responsavel pelo recebimento das mensagens trocadas
+pela biblioteca, sejam elas mensagens de Paxos ou mensagens de configuracao. A classe
+\classname{PaxosPersistentQueue} foi criada para fornecer uma implementacao para fila
+persistente utilizada amplamente utilizada por Treplica como canal ordenado para troca de
+informacoes.
+
 
 \section{Alterações propostas}\label{sec:alteracoes_propostas}
 
