@@ -24,19 +24,19 @@ técnicas de autogestão, porque dependendo do cenário, adicionar uma nova rép
 comprometer o desempenho de um sistema sobrecarregado \cite{vilaca09}.
 
 Neste capítulo apresentamos os principais componentes de Treplicas que serão de
-fundamental importância para compreender as alterações propostas na biblioteca, que tambem
-estao contemplandas nesse capitulo. Comecamos com uma \autoref{sec:visao_arquitetural},
-nessa secao apresentamos os componentes de suporte fundamentais para arquitetura de
-Trepica e examinamos detalhadamente os componentes utilizados para construção do algoritmo
-Paxos. Em seguida, na \autoref{sec:alteracoes_propostas} apresentamos minunciosamente as
-alterações e os novos componentes propostos para Treplica.
+fundamental importância para compreender as alterações propostas na biblioteca, que também
+estão contempladas nesse capitulo. Começamos com a \autoref{sec:visao_arquitetural}
+apresentando os componentes de suporte fundamentais para arquitetura de Trepica e
+examinamos detalhadamente os componentes utilizados para construção do algoritmo Paxos. Em
+seguida, na \autoref{sec:alteracoes_propostas} apresentamos minunciosamente as alterações
+e os novos componentes propostos para Treplica.
 
 
 \section{Visão arquitetural de Treplica}\label{sec:visao_arquitetural}
 
 A arquitetura de Treplica é baseada em uma \emph{fila persistente assíncrona}
 \autoref{fig:paxos_persistent_queue}, sua implementação segue muito de perto a
-decomposição modular de Paxos apresentada por \citeonlie{lamport10}. A fila é composta
+decomposição modular de Paxos apresentada por \citeonline{lamport98}. A fila é composta
 por classes internas da biblioteca que representam a funcionalidade dos quatro agentes
 de Paxos:
 
@@ -45,7 +45,7 @@ de Paxos:
   \includegraphics[width=12cm]{conteudo/capitulos/figuras/block-simple.eps}
   \caption{Paxos Persistent Queue}
   \label{fig:paxos_persistent_queue}
-\end{figure
+\end{figure}
 
 \begin{itemize}
   \item \classname{Learner} combina os agentes proponentes e aprendiz em uma única classe
@@ -84,7 +84,7 @@ de baixo para cima, começando com os módulos de suporte e, em seguida, descrev
 agentes de Paxos. Para cada módulo vamos mostrar a sua principal função, como ele interage
 com o outro módulos e as implicações de sua estrutura para a execução Paxos, o principal
 foco é apresentar os componentes utilizados pelas alterações propostas na biblioteca, a
-descrição completa desses componentes encontra-se em \cite{vieira-tr10b}.
+descrição completa desses componentes encontra-se em \citeonline{vieira-tr10b}.
 
 \subsection{Componentes de suporte}
 
@@ -177,7 +177,7 @@ consenso, devem ser persistidas de forma não-volátil antes do progresso do alg
 Premissa para garantir consistência; (2) alguns passos do algoritmo de Paxos podem
 demandar muito acesso a memória persistente.
 
-\citeonline{vieira-tr10b} mostra que o I/O é tratado apenas pelo \classname{Secretary} de
+\citeonline{vieira-tr10b} mostram que o I/O é tratado apenas pelo \classname{Secretary} de
 forma assíncrona possibilita a resolução do problema de falta de paralelismo entre as
 rodadas. Isso é feito através de uma fila de agrupamento de gravações lógicas distintas
 que retém os dados realizar uma única gravação física. Essa abordagem é vantajosa porque o
@@ -240,7 +240,7 @@ descritos na seção anterior.
 \subsubsection{Election}
 
 Esse agente é responsável pela eleição do líder requerido pelo protocolo Paxos para
-garantir progresso no algoritmo. Ele expõe a seus clientes a interface de um \Omega
+garantir progresso no algoritmo. Ele expõe a seus clientes a interface de um $\Omega$
 detector de falhas. Resumidamente, esse detector de falhas requer que qualquer agente de
 eleição confie em uma réplica do sistema como correta e que existe um tempo, não
 determinístico, em que todos os agentes de eleição confiarão na mesma réplica
@@ -271,7 +271,7 @@ retira do agente coordenador a responsabilidade exclusiva de propor valores para
 
 A diferença de implementação entre Paxos e Fast Paxos, nem tampouco a comparação de
 desempenho entre os dois algoritmos, não fazem parte do escopo desse trabalho. Para
-maiores detalhes consulte \cite{vieira09}.
+maiores detalhes consulte \citeonline{vieira09}.
 
 \subsubsection{Coordinator}
 
@@ -522,7 +522,7 @@ no no período que a réplica está bloqueada para alterações.
 
 A partir do conteúdo armazenado por \classname{StateMessage}, qualquer réplica que possuí
 uma visão de estado menor \footnote{Podemos supor comparações de estados através da última
-instância de consenso, já que o mesmo é um limiar crescente \cite{vieira-10b}.} pode se
+instância de consenso, já que o mesmo é um limiar crescente \cite{vieira-tr10b}.} pode se
 beneficiar da substituição de seu estado local corrente (desatualizado) por um mais atual,
 com potencial chance de ser o estado corrente compartilhado pela maioria grupo, conforme
 especificação de Paxos.
