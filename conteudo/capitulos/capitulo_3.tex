@@ -1,11 +1,57 @@
 \chapter{Avaliação e Resultados}\label{cap3}
 
+O \autoref{cap1:treplica_reconfiguravel} apresentou três funcionalidades para expansão da
+biblioteca Treplica:
 
-\subsection{Descrição do Ambiente Experimental}
+\begin{enumerate}
+  \item Protocolo para transferência de estado: criação de um mecanismo eficiente para
+    transferência de estado entre réplicas.
+  \item Réplicas leitoras: possibilidade da utilização de réplicas que não participam do
+    processo de decisão de instâncias de consenso.
+  \item Equalização de estado: proposta para novo componente de preenchimento de lacunas
+    originadas por possíveis períodos de instabilidade da réplica e/ou falhas.
+\end{enumerate}
+
+Supomos duas hipóteses baseado nas alterações propostas 1 e 2. A alteração proposta pelo
+item 3 não será validada por esse trabalho. Mantivemos a descrição dessa alteração para
+enriquecimento e possível utilização em trabalhos futuros.
+
+\begin{enumerate}
+  \item Se possuirmos um mecanismo transferência eficiente, podemos recuperar o estado de
+    uma réplica de forma mais eficiente que a aplicação do histórico de decreto do
+    aglomerado. Lembrando que, toda réplica votante armazena em memória persistente
+    qualquer alteração realizada no seu estado.
+  \item Se possuirmos uma réplica que evite a reconfiguração total do sistema, ganharemos
+    o poder de manobra necessário para expansão do aglomerado de acordo com a demanda de
+    clientes.
+\end{enumerate}
+
+Para validar que a hipótese 1 e 2 podem aumentar o desempenho de um sistema que utiliza a
+biblioteca Treplica, supomos uma carga de trabalho na qual uma parcela significativa das
+requisições solicitadas para aplicação seja de leitura. Essa é uma suposição razoável para
+a maioria das aplicações de Internet \cite{tpc02} e proporciona o cenário, que acreditamos
+ser o mais adequado, para execução eficiente utilizando réplicas leitoras.
+
+Desenvolvemos então, para esse conjunto de experimentos, uma aplicação Web simples que
+mapeia uma cadeia de caracteres para um valor numérico de 32 bits. Essa aplicação
+disponibiliza seus serviços aos clientes remotos através de uma interface HTTP. Começamos
+esse capítulo com a \autoref{sec:aplicacao}, apresentando os detalhes e bibliotecas
+utilizadas para concepção da aplicação. Em seguida, na \autoref{sec:ambiente_experimental}
+descrevemos o ambiente experimental utilizado para execução dos experimentos. As próximas
+duas seções \autoref{sec:experimento_tranferencia_extado} e
+\autoref{sec:experimento:replicas_leitoras} apresentam respectivamente os experimentos de
+transferência de estado e réplicas leitoras com seus respectivos cenários, resultados e
+análise. Encerramos o capitulo com a \autoref{sec:trabalhos-relacionados} apresentando as
+considerações finais.
+
+\section{Aplicação}\label{aplicacao}
+
+
+\section{Descrição do Ambiente Experimental}\label{sec:ambiente_experimental}
 
 Aplicação, balanço carga, geração carga.
 
-\subsection{Experimento Elástico}
+\section{Experimento Transferência de Estado}\label{sec:experimento_tranferencia_estado}
 
 Cenários, carga, servidores
 
@@ -13,8 +59,15 @@ Resultados
 
 Análise
 
+\section{Experimento Elástico}\label{sec:experimento:replicas_leitoras}
 
-\subsection{Experimento Transferência de Estado}
+Cenários, carga, servidores
+
+Resultados
+
+Análise
+
+\section{Experimento Transferência de Estado}
 
 Cenários, carga, servidores
 
