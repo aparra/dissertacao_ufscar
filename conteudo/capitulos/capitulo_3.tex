@@ -94,22 +94,77 @@ réplicas leitoras:
 
 \subsection{Dependências}
 
-\begin{table}[h]
-\begin{tabular}{lll}
-\rowcolor[HTML]{EFEFEF}
-\textbf{Biblioteca} & \textbf{Versão} & \textbf{Responsabilidade} \\
-treplica            & 0.3.2           & replicação ativa          \\
-vraptor             & 3.5.1           & controlador MVC\footnote{Model-View-Controller, é
-um padrão de projeto de software que separa a representação da informação da iteração do
-usuário} \\
-                    &                 &
+A \autoref{tab:dependencias} lista as bibliotecas dependentes, com a respectiva versão
+utilizada, utilizadas para compilação e execução da aplicação. A tabela lista também a
+responsabilidade que a biblioteca exerce no projeto.
+
+\begin{table}[htbp]
+\caption{Tabela de dependência de bibliotecas.}
+\label{tab:dependencias}
+\begin{center}
+\begin{tabular}{ll}\hline\hline\hline
+  Biblioteca & Versão & Responsabilidade \\
+  treplica   & 0.3.2  & \emph{midleware} de replicação ativa \\
+  vraptor \footnote{http://vraptor3.vraptor.org} & 3.5.1  & controlador MVC
+    \footnote{Model-View-Controller, é um padrão de projeto de software que separa a
+    representação da informação da iteração do usuário \cite{alguem} \\
+\hline\hline\hline
 \end{tabular}
+\end{center}
 \end{table}
 
 
 \section{Descrição do Ambiente Experimental}\label{sec:ambiente_experimental}
 
-Aplicação, balanço carga, geração carga.
+Os experimentos foram realizados em um aglomerado com 16 nós, interligados através de um
+\eng{switch} Ethernet de 1 Gbps. Cada nó possui a seguinte capacidade de processamento:
+
+\begin{itemize}
+  \item 1 processador Xeon E5620 (2.4 GHz, 6 \emph{threads});
+  \item 12 GB de memória RAM;
+  \item 500 GB de armazenamento local (disco 7200 rpm);
+  \item Plataforma de 64 bits;
+\end{itemize}
+
+Os nós utilizam o sistema operacional GNU/Linux Debian 6.0. A \autoref{tab:aplicativos}
+lista os aplicativos e suas respectivas versões que foram utilizados para execução dos
+experimentos.
+
+\begin{table}[htbp]
+\caption{Tabela de conversão de acentuação.}
+\label{tab:aplicativos}
+\begin{center}
+\begin{tabular}{ll}\hline\hline\hline
+  Aplicativo & Versão                   & Descrição            \\
+  JVM        & HotSpot 64-Bit 1.7.0\_45 & Máquina Virtual Java \\
+  Apache Tomcat \footnote{http://tomcat.apache.org} & 7.0.32 & \emph{Servlet container} \\
+  HAProxy \footnote{http://www.haproxy.org} & 1.5-dev19 & \emph{HTTP Load balancer} \\
+\hline\hline\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+O conjunto de réplicas é gerenciado por um servidor balanceador de carga configurado com
+HAProxy, usado para melhorar o desempenho de serviços Web distribuindo requisições entre
+vários servidores. Todas as requisições dos clientes passam pelo HAProxy, configurado para
+receber e rotear as requisições para as réplicas ativas, usando um algoritmo de
+revezamento circular (\eng{round-robin}), como ilustrado na \autref{fig:setup}. Uma
+requisição de leitura será  atendida localmente por uma réplica, enquanto uma requisição
+de escrita será transformada em uma proposta e submetida a uma rodada de consenso entre as
+réplicas votantes. Avaliando-se o custo de cada tipo de requisição, podemos afirmar que
+requisições de escritas são mais caras porque envolvem mais trocas de mensagens que
+requisições de leitura.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=7cm]{conteudo/capitulos/figuras/experimental-setup.dia.eps}
+  \caption{Configuração experimental}
+  \label{fig:setup}
+\end{figure}
+
+\subsection{Carga}
+
+\subsubsection{Geração da carga}
 
 \section{Experimento Transferência de Estado}\label{sec:experimento_tranferencia_estado}
 
