@@ -1,6 +1,6 @@
 \chapter{Avaliação e Resultados}\label{cap3}
 
-O \autoref{cap1:treplica_reconfiguravel} apresentou três funcionalidades para expansão da
+O \autoref{cap2:treplica_reconfiguravel} apresentou três funcionalidades para expansão da
 biblioteca Treplica:
 
 \begin{enumerate}
@@ -35,14 +35,14 @@ ser o mais adequado, para execução eficiente utilizando réplicas leitoras.
 Começamos esse capítulo com a \autoref{sec:aplicacao}, apresentando os detalhes da
 aplicação e as bibliotecas utilizadas para sua concepção. Em seguida, na
 \autoref{sec:ambiente_experimental} descrevemos o ambiente experimental usado na execução
-dos experimentos. As próximas duas seções \autoref{sec:experimento_tranferencia_extado} e
+dos experimentos. As próximas duas seções \autoref{sec:experimento_tranferencia_estado} e
 \autoref{sec:experimento_replicas_leitoras} apresentam respectivamente os experimentos de
 transferência de estado e réplicas leitoras com seus respectivos cenários, resultados e
-análise. Encerramos o capitulo com a \autoref{sec:trabalhos-relacionados} apresentando as
-considerações finais.
+análise. Encerramos o capitulo com a \autoref{sec:conclusao} apresentando as considerações
+finais.
 
 
-\section{Aplicação}\label{aplicacao}
+\section{Aplicação}\label{sec:aplicacao}
 
 Para fins experimentais, desenvolvemos então, visando a validação do conjunto de
 experimentos, uma aplicação Web simples que mapeia uma cadeia de caracteres para um valor
@@ -50,8 +50,8 @@ numérico de 32 bits. Em outras palavras, criamos uma aplicação caracterizada 
 que disponibiliza dois serviços aos clientes remotos através de uma interface HTTP:
 
 \begin{enumerate}
-  \item Operação GET \cod{/replicated-map/map/key/<chave>}
-  \item Operação PUT \cod{/replicated-map/map/key/<chave>/value/<valor>}
+  \item Operação GET \verb|/replicated-map/map/key/<chave>|
+  \item Operação PUT \verb|/replicated-map/map/key/<chave>/value/<valor>|
 \end{enumerate}
 
 A operação GET é uma operação de leitura, sua função proporciona ao cliente buscar o valor
@@ -62,7 +62,7 @@ retorna o código de status HTTP 200 e um JSON com o valor da chave requisitada
 de escrita sem falhas não possui corpo de retorno, o método retorna apenas o código de
 status HTTP 201.
 
-Utilizamos a linguagem Scala\footnote{http://www.scala-lang.org} para criação da
+Utilizamos a linguagem Scala\footnote{\url{http://www.scala-lang.org}} para criação da
 aplicação, sendo que o estado da aplicação é gerenciado pela biblioteca Treplica que atua
 como um \emph{middleware} de replicação ativa, conforme ilustra a figura
 \autoref{fig:treplica_como_middleware}. Treplica é uma biblioteca Java e mostrou boa
@@ -98,26 +98,32 @@ A \autoref{tab:dependencias} lista as bibliotecas dependentes, com a respectiva 
 utilizada, utilizadas para compilação e execução da aplicação. A tabela lista também a
 responsabilidade que a biblioteca exerce no projeto.
 
-\begin{table}[htbp]
-\caption{Tabela de dependência de bibliotecas.}
-\label{tab:dependencias}
-\begin{center}
-\begin{tabular}{ll}\hline\hline\hline
-  Biblioteca & Versão & Responsabilidade \\
-  treplica   & 0.3.2  & \emph{midleware} de replicação ativa \\
-  vraptor \footnote{http://vraptor3.vraptor.org} & 3.5.1  & controlador MVC
-    \footnote{Model-View-Controller, é um padrão de projeto de software que separa a
-    representação da informação da iteração do usuário \cite{alguem} \\
-\hline\hline\hline
+\begin{table}[htb]
+\IBGEtab{
+  \caption{Tabela de dependência de bibliotecas}
+  \label{tab:dependencias}
+}{
+  \begin{tabular}{ccc}
+  \toprule
+    Biblioteca & Versão & Responsabilidade \\
+  \midrule \midrule
+    treplica & 0.3.2 & \emph{midleware} de replicação ativa \\
+  \midrule
+    vraptor & 3.5.1 & controlador MVC \\
+  \bottomrule
 \end{tabular}
-\end{center}
+}{
+  \fonte{Produzido pelos autores.}
+  \nota{Vraptor: \url{http://vraptor3.vraptor.org}}
+  \nota{Model-View-Controller, é um padrão de projeto de software que separa a
+  representação da informação da iteração do usuário \cite{alguem}}
+}
 \end{table}
-
 
 \section{Descrição do Ambiente Experimental}\label{sec:ambiente_experimental}
 
 Os experimentos foram realizados em um aglomerado com 16 nós, interligados através de um
-\eng{switch} Ethernet de 1 Gbps. Cada nó possui a seguinte capacidade de processamento:
+\emph{switch} Ethernet de 1 Gbps. Cada nó possui a seguinte capacidade de processamento:
 
 \begin{itemize}
   \item 1 processador Xeon E5620 (2.4 GHz, 6 \emph{threads});
@@ -130,25 +136,34 @@ Os nós utilizam o sistema operacional GNU/Linux Debian 6.0. A \autoref{tab:apli
 lista os aplicativos e suas respectivas versões que foram utilizados para execução dos
 experimentos.
 
-\begin{table}[htbp]
-\caption{Tabela de conversão de acentuação.}
-\label{tab:aplicativos}
-\begin{center}
-\begin{tabular}{ll}\hline\hline\hline
-  Aplicativo & Versão                   & Descrição            \\
-  JVM        & HotSpot 64-Bit 1.7.0\_45 & Máquina Virtual Java \\
-  Apache Tomcat \footnote{http://tomcat.apache.org} & 7.0.32 & \emph{Servlet container} \\
-  HAProxy \footnote{http://www.haproxy.org} & 1.5-dev19 & \emph{HTTP Load balancer} \\
-\hline\hline\hline
+\begin{table}[htb]
+\IBGEtab{
+  \caption{Tabela de aplicativos utilizados nos experimentos}
+  \label{tab:dependencias}
+}{
+  \begin{tabular}{ccc}
+  \toprule
+    Aplicativo & Versão & Descrição \\
+  \midrule \midrule
+    JVM & HotSpot 64-Bit 1.7.0\_45 & Máquina Virtual Java \\
+  \midrule
+    Apache Tomcat & 7.0.32 & \emph{Servlet container} \\
+  \midrule
+    HAProxy & 1.5-dev19 & \emph{HTTP Load balancer} \\
+  \bottomrule
 \end{tabular}
-\end{center}
+}{
+  \fonte{Produzido pelos autores.}
+  \nota{Apache Tomcat: \url{http://tomcat.apache.org}}
+  \nota{HAProxy: \url{http://www.haproxy.org}}
+}
 \end{table}
 
 O conjunto de réplicas é gerenciado por um servidor balanceador de carga configurado com
 HAProxy, usado para melhorar o desempenho de serviços Web distribuindo requisições entre
 vários servidores. Todas as requisições dos clientes passam pelo HAProxy, configurado para
 receber e rotear as requisições para as réplicas ativas, usando um algoritmo de
-revezamento circular (\eng{round-robin}), como ilustrado na \autref{fig:setup}. Nessa
+revezamento circular (\emph{round-robin}), como ilustrado na \autoref{fig:setup}. Nessa
 configuração os processos clientes não compartilham recursos com os processos da
 aplicação, ou seja, ou a instância executa processos clientes ou executa processos da
 aplicação.
@@ -205,7 +220,7 @@ Resultados
 
 Análise
 
-\section{Experimento Elástico}\label{sec:experimento:replicas_leitoras}
+\section{Experimento Elástico}\label{sec:experimento_replicas_leitoras}
 
 Cenários, carga, servidores
 
@@ -215,4 +230,6 @@ Análise
 
 
 Descrever a proposta e sua implementação.
+
+\section{Conclusão}\label{sec:conclusao}
 
