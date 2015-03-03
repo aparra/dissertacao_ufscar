@@ -148,12 +148,10 @@ O conjunto de réplicas é gerenciado por um servidor balanceador de carga confi
 HAProxy, usado para melhorar o desempenho de serviços Web distribuindo requisições entre
 vários servidores. Todas as requisições dos clientes passam pelo HAProxy, configurado para
 receber e rotear as requisições para as réplicas ativas, usando um algoritmo de
-revezamento circular (\eng{round-robin}), como ilustrado na \autref{fig:setup}. Uma
-requisição de leitura será  atendida localmente por uma réplica, enquanto uma requisição
-de escrita será transformada em uma proposta e submetida a uma rodada de consenso entre as
-réplicas votantes. Avaliando-se o custo de cada tipo de requisição, podemos afirmar que
-requisições de escritas são mais caras porque envolvem mais trocas de mensagens que
-requisições de leitura.
+revezamento circular (\eng{round-robin}), como ilustrado na \autref{fig:setup}. Nessa
+configuração os processos clientes não compartilham recursos com os processos da
+aplicação, ou seja, ou a instância executa processos clientes ou executa processos da
+aplicação.
 
 \begin{figure}[ht]
   \centering
@@ -164,7 +162,31 @@ requisições de leitura.
 
 \subsection{Carga}
 
-\subsubsection{Geração da carga}
+O programa de teste tem por objetivo produzir a carga de trabalho requirida pelos
+experimentos e coletar medidas de vazão do ponto de vista do cliente. Sendo assim, o
+programa de teste, em cada instância, registra em \emph{log} o \emph{timestamp} de início
+e fim de cada atividade para que seja possível o computar a vazão alcançada pela
+aplicação.
+
+Para geração da carga de trabalho utilizamos processos Java que executam requisições de
+leitura (requisições para o método HTTP GET) e escrita (requisições para o método HTTP
+PUT) respeitando um percentual configurável para realização de cada operação. Para todos
+os experimentos dedicamos 5 máquinas para atuarem como clientes, sendo que cada uma
+executa 1000 requisições/segundo, variando (sem garantia de ordem) entre requisições de
+leitura e escrita.
+
+Do ponto de vista da aplicação, requisições de leitura serão atendidas localmente por uma
+das réplicas, enquanto uma requisição de escrita será transformada em uma proposta e
+submetida a uma rodada de consenso entre as réplicas votantes. Avaliando-se o custo de
+cada tipo de requisição, podemos afirmar que requisições de escritas são mais caras porque
+envolvem mais trocas de mensagens que requisições de leitura.
+
+Cada teste identificará o percentual de execução de cada operação. A partir dessa
+configuração, foi gerado uma carga total para aplicação de 5000 requisições/segundo. O
+tempo total de execução de cada teste foi de 180 segundos, sendo que desse tempo foram
+descartados os 20 segundos iniciais e finais, totalizando 140 segundos de execução
+estável. O desempenho foi medido através da quantidade de requisições HTTP atendidas e o
+tempo de resposta.
 
 \section{Experimento Transferência de Estado}\label{sec:experimento_tranferencia_estado}
 
