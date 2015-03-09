@@ -198,12 +198,48 @@ envolvem mais trocas de mensagens que requisições de leitura.
 
 Cada teste identificará o percentual de execução de cada operação. A partir dessa
 configuração, foi gerado uma carga total para aplicação de 5000 requisições/segundo. O
-tempo total de execução de cada teste foi de 180 segundos, sendo que desse tempo foram
-descartados os 20 segundos iniciais e finais, totalizando 140 segundos de execução
-estável. O desempenho foi medido através da quantidade de requisições HTTP atendidas e o
-tempo de resposta.
+tempo total de execução de cada experimento foi de 180 segundos. Para a análise
+consideramos um intervalo de 140 segundos que é resultado do descarte dos 20 segundos
+iniciais e finais. O desempenho foi medido através da quantidade de requisições HTTP
+atendidas e o tempo de resposta.
+
 
 \section{Experimento Transferência de Estado}\label{sec:experimento_tranferencia_estado}
+
+Esse experimento está fundamentada na possível disparidade de estado existente entre
+réplicas. Para construção desse cenário supomos um aglomerado com cinco réplicas, todas
+previamente configuradas com a aplicação de teste. Nosso objetivo é a geração da
+divergência do estado replicado em uma das réplicas, para alcançar esse objetivo iniciamos
+quatro réplicas simultaneamente e postergamos a inicialização de uma das réplicas.
+Definimos então dois instantes no tempo:
+
+\begin{itemize}
+  \item $t1$ início da execução das requisições dos clientes;
+  \item $t2$ inicialização da aplicação na última réplica, $t2$ acontece exatamente 180
+    segundos após $t1$.
+\end{itemize}
+
+Nessa configuração, o momento $t1$ possui quatro réplicas prontas para atender as
+requisições dos clientes. Do ponto de vista do algoritmo Paxos, ainda está faltando uma
+réplica, pois devido a característica estática da definição do total de réplicas, essa
+propriedade foi previamente definida como cinco. Nesse cenário a formação de quórum para
+definição de consenso só não é legitima quando: (1) No intervalo entre $t1$ e $t2$ duas
+réplicas falham; (2) Após $t2$, três máquinas falham.
+
+Analisando as restrições que definem o estado da aplicação sem progresso, podemos afirmar
+que a inclusão de uma nova réplica no momento $t2$ aumenta a tolerância a falhas da
+aplicação. No entanto essa afirmação é verdadeira, se e somente se, a réplica adicionada
+em $t2$ é uma réplica votante. A tolerância a falhas é uma propriedade baseada nas
+réplicas votantes, que não se altera em caso de adição de réplicas leitoras.
+
+Nessa versão de Treplica, o mecanismo de transferência de estado é exclusivo das réplicas
+leitoras, abriremos mão da propriedade de tolerância a falhas para adicionarmos, em $t2$,
+uma réplicas leitora para medir o impacto que o protocolo de transferência de estado
+causa na aplicação. Para criação de uma base de comparação, o mesmo teste foi executado
+adicionando uma réplica votante, sem o mecanismo de transferência de estado. Nesse caso, a
+equalização do estado (preenchimento da lacuna) é realizado pelo mecanismo de
+retransmissão de instância de consenso existente em Treplica.
+
 
 \fbox{\begin{minipage}
   Lorem ipsum dolor sit amet, his at eruditi civibus. Mei mucius labores delicata ut,
