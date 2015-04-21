@@ -228,7 +228,7 @@ processam a mesma sequência de requisições, conforme ilustrado na
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=14.5cm]{conteudo/capitulos/figuras/escrita_replicacao.eps}
+  \includegraphics[width=14.5cm]{conteudo/capitulos/figuras/escrita.eps}
   \caption{Requisição de escrita}
   \label{fig:write-replication}
 \end{figure}
@@ -242,7 +242,7 @@ requisição para outras réplicas, a requisição e processada localmente.
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=6.5cm]{conteudo/capitulos/figuras/leitura_replicacao.eps}
+  \includegraphics[width=6.5cm]{conteudo/capitulos/figuras/leitura.eps}
   \caption{Requisição de leitura}
   \label{fig:read-replication}
 \end{figure}
@@ -301,7 +301,7 @@ réplicas estejam ativas para garantir que a escrita seja durável. Entenda por 
 \cite{haerder83}} que uma vez que a transação foi confirmada, ela permanecerá assim, mesmo
 em caso de falhas ou erros. Ou seja, os dados foram gravados em memória não-volátil.
 
-\subsection{Algoritmo Básico}
+\subsection{Algoritmo Básico}\label{subsec:algoritmo_basico}
 
 Em Paxos os processos no sistema são agentes reativos que podem assumir vários
 papéis: \emph{proponente} (\emph{proposer}) que pode propor valores, \emph{receptor}
@@ -419,7 +419,7 @@ recuperação. Uma alternativa é transferir para a réplica desatualizada o est
 réplica atualizada, dessa forma supriremos a lacuna de desatualização substituindo por
 completo o estado desatualizado por um atualizado, semelhante a ideia de um transplante.
 
-\subsection{Estado persistente}
+\subsection{Estado persistente}\label{subsec:estado_persistente}
 
 Para satisfazer as propriedades de consenso no modelo falha-e-recuperação assíncrono é
 preciso utilizar um mecanismo capaz de gravar dados de forma persistente (não-volátil).

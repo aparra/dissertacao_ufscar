@@ -1,0 +1,28 @@
+@startuml
+
+group Fase 1 - Negociação
+  "Réplica Receptora" -> "Réplica 1" : política contratual 
+  "Réplica Receptora" -> "Réplica 2" : política contratual
+  "Réplica Receptora" -> "Réplica 3" : política contratual
+  "Réplica Receptora" -> "Réplica N" : política contratual
+  
+  "Réplica Receptora" <-- "Réplica 1" : proposta de acordo
+  "Réplica Receptora" <-- "Réplica 2" : proposta de acordo
+  "Réplica Receptora" <-- "Réplica N" : proposta de acordo  
+end
+
+group Fase 2 - Seleção de Doadora
+  rnote over "Réplica Receptora"
+    Seleção da melhor 
+    proposta de acordo 
+    para transferência
+    de estado
+  endrnote
+end
+
+group Fase 3 - Transferência
+  "Réplica Receptora" -> "Réplica 2" : doadora selecionada
+  "Réplica Receptora" <-- "Réplica 2" : estado
+end
+
+@enduml

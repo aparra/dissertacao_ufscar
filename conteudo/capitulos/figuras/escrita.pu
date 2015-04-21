@@ -1,0 +1,33 @@
+@startuml
+
+Cliente -> "Réplica 1" : escrita(dados)
+
+participant "Réplica 2"
+participant "Réplica 3"
+participant "Réplica N"
+
+activate "Réplica 1"
+  group Replicação
+    "Réplica 1" -> "Réplica 2" : compartilha(dados)
+    activate "Réplica 2"
+      "Réplica 1" <-- "Réplica 2" : ok
+    deactivate "Réplica 2"
+
+    "Réplica 1" -> "Réplica 3" : compartilha(dados)
+    activate "Réplica 3"
+      "Réplica 1" <-- "Réplica 3" : ok
+    deactivate "Réplica 3"
+
+    "Réplica 1" -> "Réplica N" : compartilha(dados)
+    activate "Réplica N"
+      "Réplica 1" <-- "Réplica N" : ok
+    deactivate "Réplica N"
+  end
+  
+  Cliente <-- "Réplica 1" : resposta
+
+deactivate "Réplica 1"
+
+
+
+@enduml

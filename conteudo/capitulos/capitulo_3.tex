@@ -117,7 +117,7 @@ responsabilidade que a biblioteca exerce no projeto.
   \nota{Vraptor: \url{http://vraptor3.vraptor.org}}
   \nota{Model-View-Controller, é um padrão de projeto de software que separa a
   representação da informação da iteração do usuário \cite{alguem}}
-}
+}{}
 \end{table}
 
 \section{Descrição do Ambiente Experimental}\label{sec:ambiente_experimental}
@@ -139,7 +139,7 @@ experimentos.
 \begin{table}[htb]
 \IBGEtab{
   \caption{Tabela de aplicativos utilizados nos experimentos}
-  \label{tab:dependencias}
+  \label{tab:aplicativos}
 }{
   \begin{tabular}{ccc}
   \toprule
@@ -156,7 +156,7 @@ experimentos.
   \fonte{Produzido pelos autores.}
   \nota{Apache Tomcat: \url{http://tomcat.apache.org}}
   \nota{HAProxy: \url{http://www.haproxy.org}}
-}
+}{}
 \end{table}
 
 O conjunto de réplicas é gerenciado por um servidor balanceador de carga configurado com
@@ -175,7 +175,7 @@ aplicação.
   \label{fig:setup}
 \end{figure}
 
-\subsection{Carga}
+\subsection{Carga}\label{subsec:carga}
 
 O programa de teste tem por objetivo produzir a carga de trabalho requirida pelos
 experimentos e coletar medidas de vazão do ponto de vista do cliente. Sendo assim, o
@@ -196,12 +196,38 @@ submetida a uma rodada de consenso entre as réplicas votantes. Avaliando-se o c
 cada tipo de requisição, podemos afirmar que requisições de escritas são mais caras porque
 envolvem mais trocas de mensagens que requisições de leitura.
 
-Cada teste identificará o percentual de execução de cada operação. A partir dessa
-configuração, foi gerado uma carga total para aplicação de 5000 requisições/segundo. O
-tempo total de execução de cada experimento foi de 180 segundos. Para a análise
-consideramos um intervalo de 140 segundos que é resultado do descarte dos 20 segundos
-iniciais e finais. O desempenho foi medido através da quantidade de requisições HTTP
-atendidas e o tempo de resposta.
+Para execução de todos os experimentos foi gerado uma carga total para aplicação de 5000
+requisições/segundo. O tempo total de execução de cada experimento foi de 300 segundos.
+Para a análise resolvemos considerar intervalos diferentes de acordo com o cenário de
+teste. Tal intervalo, ao qual chamaremos de \emph{período de análise}, será identificado
+em cada análise. Visando facilitar a comparação dos experimentos, eles foram divididas em
+duas configurações, conforme mostra os dados na \autoref{tab:configuracao_experimento}.
+
+\begin{table}[htb]
+\IBGEtab{
+  \caption{Configuração da carga experimental}
+  \label{tab:configuracao_experimento}
+}{
+  \begin{tabular}{cccc}
+  \toprule
+  Experimento & Requisições por segundo & Total de escrita & Total de leitura \\
+  \midrule \midrule
+  1           & 5000                    & 2500 (50\%)      & 2500 (50\%)      \\
+  \midrule
+  2           & 5000                    & 1000 (20\%)      & 4000 (80\%)      \\
+  \bottomrule
+\end{tabular}
+}{
+  \fonte{Produzido pelos autores.}
+}
+\end{table}
+
+Identificaremos os experimentos como Experimento 1 e Experimento 2. O objetivo da
+configuração do Experimento 1 é criar um cenário que exigirá bastante esforço do protocolo
+Paxos devido o equilíbrio da carga de requisições de leitura e escrita. Em contra partida
+a configuração do Experimento 2 proporciona um cenário com menos trocas de mensagens
+Paxos, já que a maioria das requisições (80\%) são de leitura e são resolvidos localmente
+em cada réplica.
 
 
 \section{Experimento Transferência de Estado}\label{sec:experimento_tranferencia_estado}
@@ -229,7 +255,7 @@ previamente definida como cinco antes do inicio da execução.
 
 \begin{figure}[ht]
   \centering
-  \includegraphics[width=12cm]{conteudo/capitulos/figuras/timeline.dia.eps}
+  \includegraphics[width=12cm]{conteudo/capitulos/figuras/timeline.eps}
   \caption{Linha do tempo experimento transferência de estado}
   \label{fig:timeline}
 \end{figure}
@@ -254,7 +280,7 @@ de transferência de estado). Nesse caso, a equalização do estado (preenchimen
 lacunas) é realizado pelo mecanismo de retransmissão de instância de consenso já existente
 em Treplica.
 
-Notamos nas primeiras execuções do experimento, um estado (em \emph{Megabyte})
+Notamos nas primeiras execuções do experimento, um estado (em \emph{Megabytes})
 relativamente pequeno e pouco atraente para fins experimentais. Essa característica é
 resultante da carência de uma carga mais pesada nas requisições de escrita da aplicação
 (\autoref{sec:aplicacao}), fator que acarretaria em um aumento mais eficaz do estado.
@@ -295,6 +321,227 @@ Os passos para execução do experimento de transferência de estado são listad
 
 \subsection{Resultados e Análise}
 
+A análise de desempenho para esse cenário visa responder duas questões sobre o mecanismo
+de transferência de estado em Treplica:
+
+\begin{enumerate}
+  \item Qual é o desempenho do mecanismo de transferência de estado?
+  \item Qual é a melhor estratégia em Treplica para recuperação de estado: transferência de
+    estado ou aplicação uma a uma das instâncias de consenso?
+\end{enumerate}
+
+Para responder a primeira pergunta precisamos variar o tamanho do estado para mensurar a
+capacidade do mecanismo de transferência. Para criação de tais cenários, combinamos as
+configurações do Experimento 1 e do Experimento 2, detalhados na \autoref{subsec:carga},
+com a adição de uma réplica leitora, conforme descrito na
+\autoref{sec:experimento_tranferencia_estado}. A configuração do Experimento 2 produz um
+estado menor (em \emph{Megabytes}) devido a quantidade de requisições de leitura.
+Teoricamente esse cenário é favorável para o mecanismo de transferência de estado uma vez
+que a quantidade de dados trafegados pela rede é menor.
+
+Estabelecemos os seguintes parâmetros para coleta e medição de desempenho:
+
+\begin{itemize}
+  \item Tempo total para envio do estado da réplica receptora para réplica doadora,
+    incluindo tempo para estabelecer a conexão TCP entre as réplicas;
+  \item Tamanho do estado enviado;
+  \item Tempo total para ativação de uma réplica leitora. Essa medida leva em consideração
+    o tempo que a réplica demorou para estar apta a processar mensagens da aplicação.
+\end{itemize}
+
+A \autoref{fig:dados_transf_estado} (a) exibe o tamanho do estado transferido pelo
+Experimento 1 (50\% de requisições de leitura) e pelo Experimento 2 (80\% de requisições
+de leitura). O estado do Experimento 1 é desfavorável para ambas as estratégias de
+recuperação de estado de Treplica pois produz um estado maior. Comparando os resultados de
+tempo de transferência (\autoref{fig:dados_transf_estado} (b)) podemos verificar um melhor
+desempenho do Experimento 2 justificada pela diferença no tamanho dos estados nos dois
+experimentos. Podemos afirmar então que o desempenho do mecanismo de transferência de
+estado está ligado diretamente com o tamanho do estado a ser transferido. Em outras
+palavras, quanto maior o estado maior o tempo gasto para transferi-lo.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=14cm]{conteudo/capitulos/figuras/dados-transf.eps}
+  \caption{Resultado transferência de estado}
+  \label{fig:dados_transf_estado}
+\end{figure}
+
+Os resultados ilustrado pela \autoref{fig:dados_transf_estado} também são exibidos nas
+\autoref{tab:dados_transf_estado1} (Experimento 1) e \autoref{tab:dados_transf_estado2}
+(Experimento 2).
+
+\begin{table}[htb]
+\IBGEtab{
+  \caption{Desempenho da transferência de estado no Experimento 1}
+  \label{tab:dados_transf_estado2}
+}{
+  \begin{tabular}{cccc}
+  \toprule
+                & Tempo de Transferência & Tamanho do Estado & Tempo de Ativação \\
+  \midrule \midrule
+  Média         & 1.832s                 & 140.590Mb          & 2.133s            \\
+  \midrule
+  Mediana       & 1.867s                 & 141.535Mb          & 2.209s            \\
+  \midrule
+  Desvio Padrão & 0.945                  & 1.934              & 0.631             \\
+  \bottomrule
+\end{tabular}
+}{
+  \fonte{Produzido pelos autores.}
+}
+\end{table}
+
+\begin{table}[htb]
+\IBGEtab{
+  \caption{Desempenho da transferência de estado no Experimento 2}
+  \label{tab:dados_transf_estado1}
+}{
+  \begin{tabular}{cccc}
+  \toprule
+                & Tempo de Transferência & Tamanho do Estado & Tempo de Ativação \\
+  \midrule \midrule
+  Média         & 1.282s                 & 85.096Mb          & 1.533s            \\
+  \midrule
+  Mediana       & 1.305s                 & 85.150Mb          & 1.513s            \\
+  \midrule
+  Desvio Padrão & 0.079                  & 0.296             & 0.160             \\
+  \bottomrule
+\end{tabular}
+}{
+  \fonte{Produzido pelos autores.}
+}
+\end{table}
+
+Conforme descrito na \autoref{subsec:funcionamento_protocolo}, o protocolo de
+transferência de estado utiliza uma conexão TCP ponto a ponto entre a réplica doadora e
+receptora. Essa é uma variável não controlada que pode limitar o desempenho da
+transferência de estado. Uma outra possível abordagem, não pertencente ao escopo desse
+trabalho é a utilização de um mecanismo colaborativo para envio do estado, onde partes do
+estado seriam enviados por diferentes réplicas doadoras, semelhante ao protocolo P2P.
+Gostaríamos de saber qual será o impacto que essa abordagem pode causar no desempenho de
+Paxos.
+
+A segunda pergunta definida no início dessa seção é referente a escolha da melhor
+estratégia de Treplica para recuperação de estado. Para responde-la vamos comparar as
+execuções do experimento da \autoref{sec:experimento_tranferencia_estado}, onde
+adicionamos ao aglomerado uma nova réplica: ora uma réplica votante ora uma réplica
+leitora. O período de análise está concentrado no momento da adição da réplica.
+Compararemos os dois mecanismos de recuperação de estado analisando a quantidade de
+operações por segundo atendidas em um espaço de 30 segundos de execução. O período de
+análise contém registros de 10 segundos antes da adição da réplica e 20 segundos após a
+adição.
+
+Continuamos com a mesma configuração de carga definidas pelos Experimento 1 e 2, só que
+executados em dois cenários diferentes:
+
+\begin{itemize}
+  \item Cenário 1: Execução da carga do Experimento 1 (50\% de requisições de leitura)
+    adicionando uma réplica votante e leitora;
+  \item Cenário 2: Execução da carga do Experimento 2 (80\% de requisições de leitura)
+    adicionando uma réplica votante e leitora;
+\end{itemize}
+
+Vamos começar nossa análise pelo Cenário 1. Analisando a
+\autoref{fig:transf_estado_cenario1} (a), podemos verificar um grande vale no momento da
+adição de uma réplica votante, que chamaremos de $r1$. Assim que o balanceador de carga
+detecta que $r1$ está ativa, começa a rotear requisições da aplicação e $r1$ também passa
+a receber mensagens do protocolo Paxos oriundas das outras réplicas do aglomerado. Nesse
+momento, o mecanismo detector de lacunas de $r1$ também ativo solicitando o histórico de
+decisões de consenso do aglomerado. Em outras palavras, o estado do aglomerado está sendo
+replicado, instância por instância, em $r1$. A adição de $r1$ causa uma alteração no
+desempenho do aglomerado (em termos de operações pro segundo suportada) que é retomado
+instantes depois.
+
+Por outro lado, a \autoref{fig:transf_estado_cenario1} (b) ilustra o impacto da adição de
+uma réplica leitora $r2$. Podemos verificar uma alteração no número de operações
+suportadas quando $r2$ é adicionado. Porém, fica claro que o distúrbio causado pela
+adição de uma réplica leitora é menor. Nesse caso, a replicação de estado em $r2$ acontece
+através da atuação do mecanismo de transferência de estado. Ou seja, o estado é
+transferido em uma única mensagem (\emph{bucket}) causando menos impacto no desempenho do
+aglomerado.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=14cm]{conteudo/capitulos/figuras/final-transf-estado-pr50.eps}
+  \caption{Desempenho da adição de uma nova réplica no Cenário 1}
+  \label{fig:transf_estado_cenario1}
+\end{figure}
+
+O Cenário 2 está configurado com um maior número de requisições de leitura, a
+\autoref{fig:transf_estado_cenario1} ilustra seu desempenho. Mais uma vez podemos observar
+menos impacto no número de requisições quando adicionamos uma réplica leitora,
+caracterizando assim o bom desempenho do mecanismo de transferência de estado nos dois
+cenários experimentais.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=14cm]{conteudo/capitulos/figuras/final-transf-estado-pr80.eps}
+  \caption{Desempenho da adição de uma nova réplica no Cenário 2}
+  \label{fig:transf_estado_cenario2}
+\end{figure}
+
+A maior diferença entre a adição de uma réplica votante ou leitora está no tempo de
+resposta do período de análise. Nesse caso estamos comparando os mecanismos de
+transferência de estado configurado nas duas réplicas. Analisando o resultado ilustrado na
+\autoref{fig:analise_final_transf_estado} (a) fica claro, que para esses cenários de
+testes a melhor escolha para transferência de estado é a utilização do mecanismo proposto
+por esse trabalho. O efeito causado pela redução de mensagens solicitando o envio do
+histórico das decisões de consenso também são benéficos quando analisamos o desempenho das
+duas estratégias, conforme ilustrado na \autoref{fig:analise_final_transf_estado} (b).
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=14cm]{conteudo/capitulos/figuras/final-transf-estado.eps}
+  \caption{Comparação do desempenho do mecanismo de transferência de estado}
+  \label{fig:analise_final_transf_estado}
+\end{figure}
+
+Quando comparamos os dois cenários, podemos verificar que o Cenário 2 consegue suportar
+mais operações por segundo (\autoref{fig:analise_final_transf_estado} (a)). Isso se deve
+ao fato da redução de iterações entre as réplicas requiridas por uma requisição de
+leitura, predominante no Cenário 2. Os resultados ilustrado pela
+\autoref{fig:dados_transf_estado} também são exibidos na
+\autoref{tab:adicionando_replica_votante} (adicionando uma réplica votante) e na
+\autoref{tab:adicionando_replica_leitora} (adicionando uma réplica leitora).
+
+\begin{table}[htb]
+\IBGEtab{
+  \caption{Desempenho para incorporação de uma réplica votante}
+  \label{tab:adicionando_replica_votante}
+}{
+  \begin{tabular}{ccc}
+  \toprule
+  Leitura & Operações por Segundo & Tempo de Resposta (ms) \\
+  \midrule \midrule
+  50\%    & 2862.933              & 875.824                \\
+  \midrule
+  80\%    & 3698.806              & 1095.644               \\
+  \bottomrule
+\end{tabular}
+}{
+  \fonte{Produzido pelos autores.}
+}
+\end{table}
+
+\begin{table}[htb]
+\IBGEtab{
+  \caption{Desempenho para incorporação de uma réplica leitora}
+  \label{tab:adicionando_replica_leitora}
+}{
+  \begin{tabular}{ccc}
+  \toprule
+  Leitura & Operações por Segundo & Tempo de Resposta (ms) \\
+  \midrule \midrule
+  50\%    & 3065.096              & 136.065                \\
+  \midrule
+  80\%    & 4164.806              & 227.890                \\
+  \bottomrule
+\end{tabular}
+}{
+  \fonte{Produzido pelos autores.}
+}
+\end{table}
+
 
 \section{Experimento Réplicas Leitoras}\label{sec:experimento_replicas_leitoras}
 
@@ -316,7 +563,27 @@ forma, no instante $t1$ onde se inicia a execução das requisições dos client
 réplicas participantes do experimento já foram detectadas como ativa pelo servidor HAProxy
 e estão prontas para tratar as requisições roteadas.
 
-\subsection{Procedimento de teste}
+Utilizamos cinco réplicas para configuração do aglomerado com duas formações diferentes:
+(1) Para criarmos uma base de comparação na primeira formação do aglomerado todas as
+réplicas são votantes, conforme ilustra a \autoref{fig:timeline_exp_leitora} (a); (2) Na
+segunda formação combinamos 3 réplicas ativas com 2 réplicas leitoras
+\autoref{fig:timeline_exp_leitora} (b).
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=14cm]{conteudo/capitulos/figuras/timeline_exp_leitora.eps}
+  \caption{Linha do tempo experimento réplicas leitoras}
+  \label{fig:timeline_exp_leitora}
+\end{figure}
+
+Nesse cenário a legitimidade na formação de quórum para eleição do consenso durante as
+rodadas de Paxos depende da formação utilizada. Na formação 1 não conseguimos consenso
+quando três réplicas falham enquanto a formação 2 tolera falha em apenas duas réplicas.
+Podemos afirmar então que a tolerância a falhas em Treplica está ligada diretamente como o
+número de réplicas votantes existentes na formação do aglomerado, sendo assim, a formação
+1 é mais tolerante a falhas.
+
+\subsection{Procedimento de teste}\label{subsec:procedimento_teste_leitora}
 
 Os passos para execução do experimento para medir o desempenho de réplicas leitoras são
 listados a seguir:
@@ -343,6 +610,115 @@ Aqui, diferentemente do experimento de transferência de estado, iniciamos a apl
 instâncias que atuam como servidoras simultaneamente.
 
 \subsection{Resultados e Análise}
+
+Para análise desse experimento consideraremos as cargas do Experimento 1 e do Experimento
+2 que já foram definidas na \autoref{subsec:carga}. Conforme descrito na
+\autoref{subsec:procedimento_teste_leitora}, em todas as execuções desse experimento as
+réplicas foram iniciadas simultaneamente. Sendo assim, eventuais sobrecargas na
+inicialização de réplicas leitoras foram eliminadas pois não existe nenhum estado para ser
+transferido. Em outras palavras, no momento que os geradores de carga iniciam todas as
+réplicas compartilham do mesmo estado vazio.
+
+Nesse experimento redefinimos o período de análise para 260 segundos de execução. Foram
+descartamos os 20 segundos inciais e finais visando eliminar eventuais \emph{outliers}. A
+análise de desempenho para esse cenário visa responder uma questão: Qual é o desempenho de
+uma réplica leitora?
+
+Para responder essa pergunta, vamos comparar a execução de dois cenários distintos:
+
+\begin{itemize}
+  \item Cenário 1: Execução da carga do Experimento 1 (50\% de requisições de leitura)
+    em um aglomerado com: (1) 5 réplicas votantes; (2) 3 réplicas votantes e 2 réplicas
+    leitoras;
+  \item Cenário 2: Execução da carga do Experimento 2 (80\% de requisições de leitura)
+    com a mesma formação de aglomerados do Cenário 1;
+\end{itemize}
+
+O desempenho do Cenário 1 é ilustrado pela \autoref{fig:replica_leitora_cenario1}.
+Analisando os resultados não podemos afirmar qual formação de aglomerado teve o melhor
+desempenho. Podemos notar que o desempenho do aglomerado configurado somente com réplicas
+votantes (\autoref{fig:replica_leitora_cenario1} (a)) é semelhante ao desempenho do
+aglomerado com réplicas leitoras ((\autoref{fig:replica_leitora_cenario1} (b)). O
+desempenho das réplicas leitoras nesse cenário é animador, visto que essa é a configuração
+experimental que mais exige participação de réplicas votantes.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=14cm]{conteudo/capitulos/figuras/final-replica-leitora-pr50.eps}
+  \caption{Comparação do desempenho dos aglomerados no Cenário 1}
+  \label{fig:replica_leitora_cenario1}
+\end{figure}
+
+O mesma análise do Cenário 1 pode ser replicada para o Cenário 2, conforme ilustra a
+\autoref{fig:replica_leitora_cenario1}. Novamente nenhuma afirmação pode ser feita sobre
+qual é a melhor formação de aglomerado. Esse é mais uma resultado positivo para as réplicas
+as leitoras que conseguem se equiparar o desempenho de réplicas votantes e possuem uma
+grande vantagem: adição/remoção sem necessidade de reconfiguração total. Essa
+flexibilidade no redimensionamento do aglomerado utilizando réplicas leitoras passa a ser
+um diferencial a ser explorado em Treplica.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=14cm]{conteudo/capitulos/figuras/final-replica-leitora-pr80.eps}
+  \caption{Comparação do desempenho dos aglomerados no Cenário 2}
+  \label{fig:replica_leitora_cenario2}
+\end{figure}
+
+Vamos agora analisar os resultados de uma perspectiva diferente, a
+\autoref{fig:analise_final_replica_leitora} ilustra a comparação do número de requisições
+suportadas e tempo de respostas nos dois cenários experimentais. Fica evidente a
+semelhança no desempenho das duas formações do aglomerado nesses dois critérios.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=14cm]{conteudo/capitulos/figuras/final-replica-leitora.eps}
+  \caption{Comparação do desempenho de aglomerados com réplicas leitoras}
+  \label{fig:analise_final_replica_leitora}
+\end{figure}
+
+Para maior clareza de comparação, os resultados ilustrado pela
+\autoref{fig:analise_final_replica_leitora} também são exibidos na
+\autoref{tab:adicionando_replica_votante} (aglomerado configurado somente réplicas
+votantes) e na \autoref{tab:adicionando_replica_leitora} (aglomerado configurado com
+réplicas votantes e leitoras).
+
+\begin{table}[htb]
+\IBGEtab{
+  \caption{Desempenho com réplicas leitoras}
+  \label{tab:desempenho_com_replica_leitora}
+}{
+  \begin{tabular}{ccc}
+  \toprule
+  Leitura & Operações por Segundo & Tempo de Resposta (ms) \\
+  \midrule \midrule
+  50\%    & 3118.375              & 251.804                \\
+  \midrule
+  80\%    & 4314.798              & 176.524                \\
+  \bottomrule
+\end{tabular}
+}{
+  \fonte{Produzido pelos autores.}
+}
+\end{table}
+
+\begin{table}[htb]
+\IBGEtab{
+  \caption{Desempenho sem réplicas leitoras}
+  \label{tab:desempenho_sem_replica_leitora}
+}{
+  \begin{tabular}{ccc}
+  \toprule
+  Leitura & Operações por Segundo & Tempo de Resposta (ms) \\
+  \midrule \midrule
+  50\%    & 3159.908              & 248.718                \\
+  \midrule
+  80\%    & 4262.307              & 179.123                \\
+  \bottomrule
+\end{tabular}
+}{
+  \fonte{Produzido pelos autores.}
+}
+\end{table}
 
 
 \section{Conclusão}\label{sec:conclusao}

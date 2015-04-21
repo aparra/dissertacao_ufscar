@@ -1,0 +1,12 @@
+@startuml
+
+participant Cliente
+participant "Réplica 1"
+participant "Réplica 2"
+participant "Réplica 3"
+participant "Réplica N"
+
+Cliente -> "Réplica 2" : leitura
+Cliente <-- "Réplica 2" : dados
+
+@enduml
