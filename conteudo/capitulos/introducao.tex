@@ -3,49 +3,36 @@
 
 Atualmente, muitos dos programas que estamos acostumados a utilizar no dia-a-dia são
 distribuídos. Simples rotinas diárias como ler correio eletrônico ou navegar na Internet
-envolvem algum tipo de computação distribuída~\cite{cachin11}. Podemos definir sistemas
+envolvem algum tipo de computação distribuída \cite{cachin11}. Podemos definir sistemas
 distribuídos como um conjunto de servidores (físicos ou virtuais) independentes que
-apresentam-se a seus usuários como um sistema único e coerente~\cite{tanenbaum07}. Ao
-optar pela computação distribuída procuramos alcançar os seguintes
-fundamentos~\cite{birman05}:
+apresentam-se a seus usuários como um sistema único e coerente \cite{tanenbaum07}. Ao
+optar pela computação distribuída procuramos alcançar os seguintes benefícios para a
+aplicação, descritas por \citeonline{birman05}:
 
 \begin{itemize}
   \item Tolerância a falhas: capacidade dos componentes de um sistema distribuído
-    recupera-se de defeitos sem realizar ações incorretas.
+    recuperar-se de defeitos sem realizar ações incorretas;
   \item Alta disponibilidade: capacidade de manter a prestação de serviço mesmo durante
     períodos de falhas de alguns servidores. Um sistema altamente disponível pode fornecer
-    serviços reduzidos por curtos períodos de tempo enquanto se recupera de falhas.
+    serviços reduzidos por curtos períodos de tempo enquanto se recupera de falhas;
   \item Capacidade de recuperação: correção de servidores avariados e re-aderência ao
-    sistema.
+    sistema;
   \item Consistência: capacidade do sistema coordenar ações de múltiplos servidores,
-    muitas vezes na presença de concorrência e falhas.
-  \item Escalabilidade: capacidade dos recursos de um sistema suportar aumento de carga.
+    muitas vezes na presença de concorrência e falhas;
+  \item Escalabilidade: capacidade dos recursos de um sistema suportar aumento de carga;
   \item Segurança: capacidade de proteger os dados, serviços e recursos contra o uso
-    indevido por usuários não autorizados.
+    indevido por usuários não autorizados;
   \item Desempenho previsível: garantia que um sistema distribuído alcance níveis
-    desejados de desempenho.
+    desejados de desempenho;
   \item Pontualidade: em sistemas sujeitos a restrições de tempo real, garantia que
     a computação seja executada dentro dos limites de tempo definido.
 \end{itemize}
 
-Como consequência da capacidade de executar ao mesmo tempo de forma independente, os
+Como consequência da capacidade de execução simultânea de de forma independente, os
 servidores de um sistema distribuído podem parar de funcionar também de forma
-independente~\cite{cachin11}. Devido a essa noção de falhas parciais,
-Lamport~\cite{cachin11} define de forma bem humorada sistemas distribuídos como sistemas
-onde a falha de uma máquina que você nem sabia que existia pode tornar sua própria
-máquina inutilizável.
-
-Quando um subconjunto de servidores falham, o desafio para os que ainda estão
-operacionais é manter consistência na sincronização de suas atividades. Ou seja, a
-colaboração entre os servidores deve ser suficientemente robusta para suportar falhas
-parciais~\cite{cachin11}. O objetivo de sistemas de alta disponibilidade (tolerante a
-falhas) é continuar a prover serviços mesmo na ocorrência de falhas em alguns de seus
-componentes. A noção de falha parcial é um aspecto característico de sistemas
-distribuídos que os diferem de sistemas centralizados. Uma falha parcial pode acontecer
-quando um componente em um sistema distribuído falha e pode acarretar na operação inadequada
-de outros componentes e, ao mesmo tempo, deixar outros totalmente ilesos~\cite{tanenbaum07}.
-A falha em um componente pode provocar \emph{reconfiguração} do sistema de maneira que o
-componente falho não pertença mais ao conjunto capaz de realizar processamento.
+independente \cite{cachin11}. Devido a essa noção de falhas parciais,
+\citeonline{cachin11} definiu que sistemas distribuídos são sistemas onde a falha de uma
+máquina que você nem sabia que existia pode tornar sua própria máquina inutilizável.
 
 Replicação de dados é uma estratégia amplamente empregada em sistemas distribuídos para
 prover tolerância a falhas e aumentar a capacidade de processamento. A \emph{replicação
@@ -86,7 +73,82 @@ capacidade dinamicamente em resposta às mudanças da demanda gerada. Dessa form
 aplicações com a simplicidade de programação de aplicações centralizadas e características
 de aplicações distribuídas.
 
-Neste trabalho propomos um mecanismo de reconfiguração do algoritmo Paxos que permite a
+
+
+
+Atualmente, muitos dos programas que estamos acostumados a utilizar no dia-a-dia são
+distribuídos. Simples rotinas diárias como ler correio eletrônico ou navegar na Internet
+envolvem algum tipo de computação distribuída \cite{cachin11}. Podemos definir sistemas
+distribuídos como um conjunto de servidores (físicos ou virtuais) independentes que
+apresentam-se a seus usuários como um sistema único e coerente \cite{tanenbaum07}. Também
+é verdade que as falhas nos servidores podem ocorrer de maneira independente. Essa noção
+de falhas parciais, levou \citeonline{cachin11} a definir que sistemas distribuídos são
+sistemas onde a falha de uma máquina que você nem sabia que existia pode tornar sua
+própria máquina inutilizável.
+
+Quando existe uma falha em um servidor, o desafio para os que ainda estão operacionais é
+manter consistência na sincronização de suas atividades. Ou seja, a colaboração entre os
+servidores deve ser suficientemente robusta para suportar falhas parciais \cite{cachin11}.
+Sendo assim, o objetivo de sistemas tolerantes a falhas é continuar a prover serviços
+mesmo na ocorrência de defeitos em alguns de seus componentes, podendo até levar a
+reconfiguração do sistema para exclusão do componente defeituoso \cite{tanenbaum07}.
+
+Uma estratégia amplamente empregada em sistemas distribuídos para prover tolerância a
+falhas e aumento na capacidade de processamento é a replicação de dados. A
+\emph{replicação ativa} \cite{schneider90} é uma estratégia de replicação voltada para
+manutenção de um mesmo estado compartilhado entre servidores que atendem requisições de
+uma mesma aplicação, sendo cada um desses servidores chamado de \emph{réplica}. A
+replicação ativa é baseada na re-execução em cada uma das réplicas as operações que
+alteram o estado compartilhado, devidamente ordenadas por um algoritmo apropriado
+\cite{schneider90}. Dentre os vários algoritmos de replicação, um dos mais amplamente
+usados e estudados atualmente é o algoritmo Paxos \cite{lamport98}.
+
+Algoritmos de replicação são parte fundamental de várias arquiteturas distribuídas de
+software \cite{chandra07, hupfeld08b, maccormick04}, sendo particularmente usados como
+soluções para coordenação entre processos que implementam aplicações com garantias de
+consistência relaxadas \cite{burrows06} ou fazendo parte de algum esquema hierárquico de
+bloqueios \cite{lampson96}. De forma geral, é incomum encontrar aplicações onde a parte
+principal do processamento acontece através de replicação ativa devido ao fato que essa
+estratégia possui um custo considerável em termos do número de mensagens trocadas, o que
+limita a escalabilidade do sistema além de algumas poucas réplicas \cite{lampson96}.
+
+Acreditamos que seja possível utilizar replicação ativa não só como substrato de apoio a
+coordenação de aplicações distribuídas de baixo acoplamento, mas também como base para a
+construção de uma aplicação completa. Com esse objetivo, a biblioteca de replicação
+Treplica \cite{vieira08a, vieira-tr10b} foi projetada para o modelo computacional
+\emph{falha-e-recuperação assíncrono} e provém uma forma simples e orientada a objetos a
+construção de aplicações altamente confiáveis. Através de uma interface de programação
+simples, Treplica permite que o projetista da aplicação pense em termos de operações com
+semântica sequencial, similar àquela encontrada em sistemas de processamento transacional.
+Utilizando essa biblioteca, ou soluções similares, a aplicação resultante preserva a
+consistência de uma aplicação centralizada e adiciona a tolerância a falhas de uma
+aplicação distribuída.
+
+Apesar da maior confiabilidade, construir uma aplicação somente com replicação ativa
+potencialmente limita o quanto que essa aplicação pode tirar proveito dos ganhos de escala
+advindos de ser uma aplicação distribuída. Resultados experimentais mostram o impacto
+negativo do aumento da escala no desempenho da implementação de Paxos encontrada em
+Treplica \cite{vieira09}. Gostaríamos de ser ser capazes de, não só tornar a capacidade de
+processamento proporcional ao número de servidores empregados, mas também de variar essa
+capacidade dinamicamente em resposta às mudanças da demanda gerada. Dessa forma, teríamos
+aplicações com a simplicidade de programação de aplicações centralizadas e características
+de aplicações distribuídas.
+
+Nesse trabalho cobiçamos transformar Treplica em uma biblioteca reconfigurável. O problema
+de reconfiguração é complexo, principalmente na presença de falhas e assincronia. Sua
+resolução pode ser obtida através de duas estratégias: (1) baseado em transições de visões
+do conjunto de réplicas operacionais \cite{birman87a, birman87b}; (2) definição, via
+consenso, de uma nova configuração a partir da construção de uma barreira que, quando
+alcançada pelas réplicas, faz com que elas abandonem a configuração vigente e ingressem na
+nova configuração definida (caso elas façam parte dela) \cite{lamport10}.
+
+A estratégia de reconfiguração descrita por \cite{lamport10} pode ser bem complexa, ela
+abrange adição e remoção de réplicas, nessa dissertação estamos focados em um sub-conjunto
+desse problema onde apenas novas réplicas com estado inicial vazio são adicionadas,
+consequentemente não precisamos de uma política para tratar réplicas com estado. Em outras
+palavras, a política para tratar recuperação de falhas em Treplica não foi alterada.
+
+Nesse trabalho propomos um mecanismo de reconfiguração do algoritmo Paxos que permite a
 adição de novas réplicas sem aumentar de forma significativa o custo de manutenção da
 consistência do sistema como um todo. A nossa proposta tem como base fundamental o
 estabelecimento de \emph{réplicas leitoras}, que são capazes de atender a todas as
@@ -98,6 +160,9 @@ importante para o mecanismo de replicação gerenciar a consistência de estado 
 Isto ocorre pois toda alteração de estado deve ser votada e aprovada por uma maioria
 destas réplicas. Assim, toda redução ou expansão neste conjunto deve ser precedida de
 reconfiguração para que o número de votantes seja claramente definido.
+A replicação de estado de forma síncrona recebe o nome de replicação ativa e consiste de
+um conjunto de técnicas utilizadas para compartilhar ativa e completamente o estado de
+processamento entre as réplicas.
 
 Quando um servidor é retirado do sistema a aplicação deve ser reconfigurada para
 trabalhar sem esta réplica. Isso afeta diretamente o mecanismo de verificação de conflitos
@@ -124,6 +189,4 @@ vista teórico, podemos encontrar um tratamento formal do problema~\cite{lamport
 sistemas práticos tendem a evitar esta questão de forma a simplificar a construção do
 sistema~\cite{chandra07}.
 
-A replicação de estado de forma síncrona recebe o nome de replicação ativa e consiste de
-um conjunto de técnicas utilizadas para compartilhar ativa e completamente o estado de
-processamento entre as réplicas.
+
