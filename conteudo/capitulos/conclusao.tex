@@ -1,8 +1,96 @@
-\chapter*[Conclusão]{Conclusão}
+\chapter*[Conclusão]{Conclusão}\label{conclusao}
 \addcontentsline{toc}{chapter}{Conclusão}
 
-Coloque o texto aqui.
+Nesse trabalho nós mostramos a implementação e os resultados experimentais de duas novas
+funcionalidades adicionadas em Treplica: (1) mecanismo de transferência de estado; e (2)
+réplicas leitoras. Conforme pudemos observar os resultados experimentais obtidos com o
+mecanismo de transferência de estado motivam na expansão da utilização em réplicas
+votantes, pois atualmente ele é exclusivo para réplicas leitoras.
 
+O experimento de transferência de estado utiliza a adição de uma réplica votante e
+leitora, embora seja injusto, é inevitável comparar qual réplica teve a melhor aderência
+no sistema. Pudemos observar que a adição de uma réplica leitora gerou menos impacto no
+desempenho do aglomerado. Esse bom desempenho na expansão do aglomerado não pode ser
+atribuído para réplicas leitoras, mas sim ao protocolo de transferência. Esse é um
+resultado interessante, pois réplicas votantes também podem ser beneficiar da utilização
+do protocolo de transferência com o ônus de reconfiguração total \cite{lamport10} em
+caso de expansão.
+
+No entanto, alterar o número de réplicas participantes de um sistema que usa replicação
+ativa não é uma tarefa trivial pois a informação da cardinalidade do conjunto de réplicas
+do sistema é importante para o mecanismo de replicação gerenciar a consistência de estado
+da aplicação. Isso ocorre pois toda alteração de estado deve ser votada e aprovada por uma
+maioria destas réplicas. Assim, toda redução ou expansão neste conjunto deve ser precedida
+de reconfiguração para que o número de votantes seja consistente entre as réplicas. É
+baseado nesse cenário a maior vantagem que uma réplica leitora pode oferecer. Pudemos
+observar que o desempenho de réplicas leitoras é parecido com o desempenho de réplicas
+votantes, porém a adição de réplicas leitoras remove completamente a necessidade de
+reconfiguração. Infelizmente ainda não temos como mensurar o impacto da reconfiguração
+total em Treplica, por isso não temos uma resposta clara para a reponde a pergunta: é
+preferível adicionar uma réplica votante ou leitora?
+
+Acreditamos que uma maior escalabilidade pode ampliar as oportunidades de aplicação de
+replicação ativa para novos contextos. Especificamente, aplicações Web com uma parcela
+considerável de requisições de leitura podem se beneficiar da solução proposta.
+
+Por fim, vale ressaltar a redução de desempenho de acordo com o aumento de requisições de
+escrita. Embora uma requisição de escrita exija mais trocas de mensagens Paxos entre as
+réplicas, pudemos notar que esse não era a maior razão para a redução de desempenho.
+Observarmos um grande número de conflitos entre processos tentando propor alterações de
+estado diferentes na mesma rodada. Paxos tolera apenas uma proposta por rodada, em
+Treplica quando esse cenário é detectado, o agente coordenador envia uma mensagem para o
+proponente que gerou conflito aprender o que já foi decidido na rodada conflitante. Sendo
+assim, o proponente cria uma nova proposta com um número diferente de rodada e tenta
+novamente estabelecer o consenso com a possibilidade de um novo conflito. Notamos que
+conforme o aumento de propostas (ou agentes proponentes), maior é o número de conflitos.
+Treplica utiliza um mecanismo descentralizado para geração de número de rodadas baseado
+no conhecimento do estado local da réplica. Esse mecanismo não determinístico causa
+problemas de conflito quando atua dessincronizado. Infelizmente a exploração desse
+problema não faz parte do escopo desse trabalho.
+
+
+\section*{Trabalhos futuros}
+
+As propostas apresentadas por esse trabalho é um passo em direção ao mecanismo de
+autogestão cobiçado para Treplica. Realizar autointegração de réplicas sem intervenção
+humana exige criação de mecanismos para monitorar alterações no comportamento da aplicação
+e infraestrutura \cite{renesse03, pierre06}. A partir do momento que o sistema está ciente
+das mudanças de comportamento, pode tomar decisões para iniciar réplicas temporárias,
+quando existe aumento de demanda ou até desligá-las após detectar queda no número de
+acessos. Essa ideia de dimensionamento elástico leva a uma pergunta: quantas réplicas são
+necessárias para suportar uma determinada carga de maneira eficiente? A resposta dessa
+pergunta é o coração da pesquisa para criação de um mecanismo de monitoração em Treplica.
+
+Outro ponto não atacado por esse trabalho é a implementação de um mecanismo híbrido de
+detecção de lacunas no estado. A partir da suposição que, para uma lacuna pequena, o
+mecanismo de transferência de de estado não é menos eficiente que a retransmissão de
+instâncias de consenso, esse mecanismo seria capaz de escolher o melhor preenchedor de
+lacunas de acordo com a condição do estado. Dessa forma, Treplica poderia suportar de
+maneira mais eficiente falha-e-recuperação nas réplicas, além de expandir a utilização do
+protocolo de transferência de estados para réplicas votantes (completas).
+
+Conforme descrito na \autoref{subsec:funcionamento_protocolo}, o protocolo de
+transferência de estado utiliza uma conexão TCP ponto a ponto entre a réplica doadora e
+receptora. Essa é uma variável não controlada que pode limitar o desempenho da
+transferência de estado. Uma outra possível abordagem, não pertencente ao escopo desse
+trabalho é a utilização de um mecanismo colaborativo para envio do estado, onde partes do
+estado seriam enviados por diferentes réplicas doadoras, semelhante ao protocolo P2P.
+Gostaríamos de saber qual será o impacto que essa abordagem pode causar no desempenho de
+Paxos.
+
+Gostaríamos também de ressaltar que o mecanismo de transferência de estado trás para
+Treplica a possibilidade da coleta de lixo. Instâncias de consenso antigas podem ser
+removidas da memória a partir do momento que nenhuma réplica está mais interessada no
+resultado desse consenso. O resultado dessa abordagem é a utilização mais eficiente da
+memória.
+
+Conforme já afirmamos anteriormente, esse trabalhamo atua em um sub-conjunto do problema
+de reconfiguração total descrito por \cite{lamport10}. Adotamos essa abordagem para
+explorar outros mecanismos como: transferência de estado e réplicas leitoras, além de
+fugir da complexidade da reconfiguração total. No entanto, pudemos observar nos resultados
+dos experimentos que a utilização de réplicas leitoras é interessante mas não substituí
+uma réplica votante. Esse trabalho também ajuda a esclarecer o que precisa ser feito para
+uma reconfiguração total em Treplica.
 
 \section*{Publicações}
 
