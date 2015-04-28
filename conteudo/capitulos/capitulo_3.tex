@@ -17,35 +17,54 @@ pelo item 3 não será validada por esse trabalho. Mantivemos a descrição dess
 para enriquecimento do conteúdo e possível utilização em trabalhos futuros.
 
 \begin{enumerate}
-  \item Se possuirmos um mecanismo transferência eficiente, podemos recuperar o estado de
-    uma réplica de forma mais eficiente que a aplicação do histórico de decreto do
-    aglomerado. Lembrando que, toda réplica votante armazena em memória persistente
-    qualquer alteração realizada no seu estado.
-  \item Se possuirmos uma réplica que evite a reconfiguração total do sistema, ganharemos
-    o poder de manobra necessário para expansão do aglomerado de acordo com a demanda de
+  \item Se possuirmos um mecanismo de transferência eficiente, podemos recuperar o estado
+    de uma réplica de forma mais rápida do que se fôssemos rexecutar todo o histórico de
+    operações perdidas por essa réplica.
+  \item Se adicionarmos uma réplica de forma a evitar uma reconfiguração total do sistema,
+    ganharemos a flexibilidade para expansão do aglomerado de acordo com a demanda de
     clientes.
 \end{enumerate}
 
 Para validar que a hipótese 1 e 2 podem aumentar o desempenho de um sistema que utiliza a
-biblioteca Treplica, supomos uma carga de trabalho na qual uma parcela significativa das
-requisições solicitadas para aplicação seja de leitura. Essa é uma suposição razoável para
-a maioria das aplicações de Internet \cite{tpc02} e proporciona o cenário, que acreditamos
-ser o mais adequado, para execução eficiente utilizando réplicas leitoras.
+biblioteca Treplica, criamos dois experimentos onde supomos uma carga de trabalho na qual
+uma parcela significativa das requisições solicitadas para aplicação seja de leitura. Essa
+é uma suposição razoável para a maioria das aplicações de Internet \cite{tpc02} e
+proporciona o cenário, que acreditamos ser o mais adequado, para execução eficiente
+utilizando réplicas leitoras.
+
+\begin{enumerate}
+  \item Experimento para transferência de estado: criamos um cenário onde uma nova rélica
+    leitora é adicionada no aglomerado. Dessa forma o protocolo de transferência de estado
+    é acionado. Para criar uma base de comparação, repetimos o experimento adicionando uma
+    réplica votante exigindo a atuação do mecanismo de retransmissão de instância de
+    consenso.
+  \item Experimento de réplicas leitoras: fundamentamos esse experimento na combinação de
+    réplicas com diferentes graus de uso de memória persistente. Utilizamos duas formações
+    de aglomerados submetidos a mesma carga: (1) três réplicas votantes e duas réplicas
+    leitoras. O objetivo nesse cenário é testar o desempenho das réplicas leitoras; e (2)
+    5 réplicas votantes para criação de uma base de comparação.
+\end{enumerate}
 
 Começamos esse capítulo com a \autoref{sec:aplicacao}, apresentando os detalhes da
 aplicação e as bibliotecas utilizadas para sua concepção. Em seguida, na
 \autoref{sec:ambiente_experimental} descrevemos o ambiente experimental usado na execução
-dos experimentos. As próximas duas seções \autoref{sec:experimento_tranferencia_estado} e
-\autoref{sec:experimento_replicas_leitoras} apresentam respectivamente os experimentos de
-transferência de estado e réplicas leitoras com seus respectivos cenários, resultados e
-análise. Encerramos o capitulo com a \autoref{sec:conclusao} apresentando as considerações
-finais.
+dos experimentos. A \autoref{sec:experimento_tranferencia_estado} e
+\autoref{sec:experimento_replicas_leitoras} apresentam, respectivamente, os experimentos de
+transferência de estado e de réplicas leitoras com seus respectivos resultados e análise.
+Encerramos o capitulo com a \autoref{sec:conclusao} apresentando as considerações finais.
 
+\section{Visão Geral}
+
+Colocar texto aqui, falar com Gustavo.
+
+\section{Ambiente de Aglomerado}
+
+Colocar texto aqui, falar com Gustavo.
 
 \section{Aplicação}\label{sec:aplicacao}
 
-Para fins experimentais, desenvolvemos então, visando a validação do conjunto de
-experimentos, uma aplicação Web simples que mapeia uma cadeia de caracteres para um valor
+Visando a validação experimental das hipóteses apresentadas na seção anterior,
+desenvolvemos uma aplicação Web simples que mapeia uma cadeia de caracteres para um valor
 numérico de 32 bits. Em outras palavras, criamos uma aplicação caracterizada como um mapa
 que disponibiliza dois serviços aos clientes remotos através de uma interface HTTP:
 
@@ -54,13 +73,12 @@ que disponibiliza dois serviços aos clientes remotos através de uma interface 
   \item Operação PUT \verb|/replicated-map/map/key/<chave>/value/<valor>|
 \end{enumerate}
 
-A operação GET é uma operação de leitura, sua função proporciona ao cliente buscar o valor
-armazenado em uma determinada chave. Definimos que uma operação bem-sucedida no método GET
-retorna o código de status HTTP 200 e um JSON com o valor da chave requisitada
-\verb|{"value":"<valor>"}|. Por outro lado, o método PUT defini operações de escrita, ele
-é responsável por armazenar um valor em uma determinada chave. Definimos que uma operação
-de escrita sem falhas não possui corpo de retorno, o método retorna apenas o código de
-status HTTP 201.
+A operação GET é uma operação de leitura que permite ao cliente buscar o valor armazenado
+em uma determinada chave. Definimos que uma operação bem-sucedida no método GET retorna o
+código de status HTTP 200 e um JSON com o valor da chave requisitada
+\verb|{"value":"<valor>"}|. A operação PUT define operações de escrita, ela é responsável
+por armazenar um valor em uma determinada chave. Definimos que uma operação de escrita sem
+falhas não possui corpo de retorno, o método retorna apenas o código de status HTTP 201.
 
 Utilizamos a linguagem Scala\footnote{\url{http://www.scala-lang.org}} para criação da
 aplicação, sendo que o estado da aplicação é gerenciado pela biblioteca Treplica que atua
@@ -76,15 +94,17 @@ bibliotecas Java com a linguagem Scala.
   \label{fig:treplica_como_middleware}
 \end{figure}
 
-Apesar da simplicidade encontrada na aplicação de teste, ela é executada em um aglomerado
-de máquinas e oferece pra seus clientes, a garantia de que toda operação de escrita será
-replicada para outras instâncias de forma ativa. Com base nessa propriedade, garantimos a
-elegibilidade dessa aplicação para execução de experimentos no modelo computacional
-utilizando replicação ativa.
+Sabemos que um mapa pode ser replicado usando outras estratégias mais eficientes que
+replicação ativa devido a independência das chaves, mas selecionamos essa aplicação por
+sua simplicidade de implementação e geração de carga. Dessa forma a aplicação de teste é
+executada em um aglomerado de máquinas e oferece pra seus clientes, a garantia de que toda
+operação de escrita será replicada para outras instâncias de forma ativa, usando Treplica.
+Com base nessa propriedade, garantimos a elegibilidade dessa aplicação para execução de
+experimentos no modelo computacional utilizando replicação ativa.
 
-Cada uma das réplicas instanciadas possui seu próprio estado e podem assumir diferentes
-graus de persistência para dos dados em memória, definido-as como réplicas votantes ou
-réplicas leitoras:
+Cada uma das réplicas instanciadas possui seu próprio estado e pode assumir diferentes
+graus de persistência para os dados em memória, definido-as como réplicas votantes ou
+réplicas leitoras, de acordo com \autoref{sec:replicas_leitoras}:
 
 \begin{itemize}
   \item Réplica votante: utiliza memória persistente, premissa do algoritmo Paxos para
@@ -92,10 +112,13 @@ réplicas leitoras:
   \item Réplica leitora: utiliza memória volátil.
 \end{itemize}
 
+A utilização de réplicas votantes e leitoras irá depender do experimento que está sendo
+executado.
+
 \subsection{Dependências}
 
 A \autoref{tab:dependencias} lista as bibliotecas dependentes, com a respectiva versão
-utilizada, utilizadas para compilação e execução da aplicação. A tabela lista também a
+utilizada para compilação e execução da aplicação. A tabela lista também a
 responsabilidade que a biblioteca exerce no projeto.
 
 \begin{table}[htb]
@@ -113,7 +136,6 @@ responsabilidade que a biblioteca exerce no projeto.
   \bottomrule
 \end{tabular}
 }{
-  \fonte{Produzido pelos autores.}
   \nota{Vraptor: \url{http://vraptor3.vraptor.org}}
   \nota{Model-View-Controller, é um padrão de projeto de software que separa a
   representação da informação da iteração do usuário \cite{alguem}}
@@ -128,13 +150,14 @@ Os experimentos foram realizados em um aglomerado com 16 nós, interligados atra
 \begin{itemize}
   \item 1 processador Xeon E5620 (2.4 GHz, 6 \emph{threads});
   \item 12 GB de memória RAM;
+  \item 2 placas de rede Ethernet de 1 Gbps
   \item 500 GB de armazenamento local (disco 7200 rpm);
   \item Plataforma de 64 bits;
 \end{itemize}
 
 Os nós utilizam o sistema operacional GNU/Linux Debian 6.0. A \autoref{tab:aplicativos}
-lista os aplicativos e suas respectivas versões que foram utilizados para execução dos
-experimentos.
+lista os aplicativos que foram utilizados para execução dos experimentos e suas
+respectivas versões.
 
 \begin{table}[htb]
 \IBGEtab{
@@ -153,7 +176,6 @@ experimentos.
   \bottomrule
 \end{tabular}
 }{
-  \fonte{Produzido pelos autores.}
   \nota{Apache Tomcat: \url{http://tomcat.apache.org}}
   \nota{HAProxy: \url{http://www.haproxy.org}}
 }{}
@@ -161,11 +183,12 @@ experimentos.
 
 O conjunto de réplicas é gerenciado por um servidor balanceador de carga configurado com
 HAProxy, usado para melhorar o desempenho de serviços Web distribuindo requisições entre
-vários servidores. Todas as requisições dos clientes passam pelo HAProxy, configurado para
-receber e rotear as requisições para as réplicas ativas, usando um algoritmo de
+vários servidores. As requisições executadas em um experimento são iniciadas por geradores
+de carga, descritos na \autoref{subsec:carga}, e passam pelo HAProxy que está configurado
+para receber e rotear as requisições para as réplicas ativas, usando um algoritmo de
 revezamento circular (\emph{round-robin}), como ilustrado na \autoref{fig:setup}. Nessa
-configuração os processos clientes não compartilham recursos com os processos da
-aplicação, ou seja, ou a instância executa processos clientes ou executa processos da
+configuração os geradores de carga não compartilham recursos com os processos da
+aplicação, ou seja, ou uma máquina executa processos clientes ou executa processos da
 aplicação.
 
 \begin{figure}[ht]
@@ -177,31 +200,36 @@ aplicação.
 
 \subsection{Carga}\label{subsec:carga}
 
-O programa de teste tem por objetivo produzir a carga de trabalho requirida pelos
-experimentos e coletar medidas de vazão do ponto de vista do cliente. Sendo assim, o
-programa de teste, em cada instância, registra em \emph{log} o \emph{timestamp} de início
-e fim de cada atividade para que seja possível o computar a vazão alcançada pela
+O gerador de carga tem como objetivo produzir a carga de trabalho requirida pelos
+experimentos e coletar medidas de vazão do ponto de vista do cliente. Sendo assim, cada
+instância do gerador de carga registra em \emph{log} o \emph{timestamp} de início
+e fim de cada atividade, para que seja possível o computar a vazão alcançada pela
 aplicação.
 
-Para geração da carga de trabalho utilizamos processos Java que executam requisições de
-leitura (requisições para o método HTTP GET) e escrita (requisições para o método HTTP
-PUT) respeitando um percentual configurável para realização de cada operação. Para todos
-os experimentos dedicamos 5 máquinas para atuarem como clientes, sendo que cada uma
-executa 1000 requisições/segundo, variando (sem garantia de ordem) entre requisições de
-leitura e escrita.
+Os geradores de carga são processos Java que executam requisições de leitura (requisições
+para o método HTTP GET) e escrita (requisições para o método HTTP PUT) respeitando um
+percentual configurável para realização de cada operação. Para todos os experimentos
+dedicamos 5 máquinas para atuarem como clientes, sendo que cada uma executa 1000
+requisições/segundo, variando entre requisições de leitura e escrita. Esse valor é maior
+do que Treplica consegue atender para essa aplicação, em todos os cenários testados. Assim
+garantimos que o sistema está sempre em sua capacidade máxima. O gerador de carga
+acompanha o número de requisições em aberto e limita esse número a $160$ em cada
+instância, de forma a regular o fluxo de criação de requisições com o fluxo de
+processamento das mesmas.
 
 Do ponto de vista da aplicação, requisições de leitura serão atendidas localmente por uma
 das réplicas, enquanto uma requisição de escrita será transformada em uma proposta e
-submetida a uma rodada de consenso entre as réplicas votantes. Avaliando-se o custo de
-cada tipo de requisição, podemos afirmar que requisições de escritas são mais caras porque
-envolvem mais trocas de mensagens que requisições de leitura.
+submetida a uma rodada de consenso. Avaliando-se o custo de cada tipo de requisição,
+podemos afirmar que requisições de escrita são mais caras porque envolvem mais trocas de
+mensagens que requisições de leitura.
 
-Para execução de todos os experimentos foi gerado uma carga total para aplicação de 5000
-requisições/segundo. O tempo total de execução de cada experimento foi de 300 segundos.
-Para a análise resolvemos considerar intervalos diferentes de acordo com o cenário de
-teste. Tal intervalo, ao qual chamaremos de \emph{período de análise}, será identificado
-em cada análise. Visando facilitar a comparação dos experimentos, eles foram divididas em
-duas configurações, conforme mostra os dados na \autoref{tab:configuracao_experimento}.
+Para execução de todos os experimentos foi gerado uma carga utilizando todas as 5 máquinas
+disponíveis, totalizando uma carga máxima para a aplicação de 5000 requisições/segundo,
+mantida durante 300 s para cada medida experimental. Para a análise resolvemos considerar
+intervalos diferentes de acordo com o cenário de teste. Tal intervalo, ao qual chamaremos
+de \emph{período de análise}, será identificado em cada análise. Os experimentos foram
+divididas em duas configurações, conforme mostra os dados na
+\autoref{tab:configuracao_experimento}.
 
 \begin{table}[htb]
 \IBGEtab{
@@ -218,22 +246,37 @@ duas configurações, conforme mostra os dados na \autoref{tab:configuracao_expe
   \bottomrule
 \end{tabular}
 }{
-  \fonte{Produzido pelos autores.}
 }
 \end{table}
 
 Identificaremos os experimentos como Experimento 1 e Experimento 2. O objetivo da
 configuração do Experimento 1 é criar um cenário que exigirá bastante esforço do protocolo
 Paxos devido o equilíbrio da carga de requisições de leitura e escrita. Em contra partida
-a configuração do Experimento 2 proporciona um cenário com menos trocas de mensagens
-Paxos, já que a maioria das requisições (80\%) são de leitura e são resolvidos localmente
+a configuração do Experimento 2 proporciona um cenário com menos trocas de mensagens de
+Paxos, já que a maioria das requisições (80\%) são de leitura e são atendidas localmente
 em cada réplica.
 
 
 \section{Experimento Transferência de Estado}\label{sec:experimento_tranferencia_estado}
 
-Esse experimento está fundamentada na possível disparidade de estado existente entre
-réplicas. Para construção desse cenário supomos um aglomerado com cinco réplicas, todas
+A análise de desempenho para esse experimento visa responder duas questões sobre o
+mecanismo de transferência de estado em Treplica:
+
+\begin{enumerate}
+  \item Qual é o desempenho do mecanismo de transferência de estado?
+  \item Qual é a melhor estratégia em Treplica para recuperação de estado: transferência de
+    estado ou aplicação uma a uma das instâncias de consenso?
+\end{enumerate}
+
+Para garantir a confiabilidade dos resultados decidimos variar o tamanho do estado para
+medir a capacidade do mecanismo de transferência. Para criação de tais cenários,
+combinamos as configurações do Experimento 1 e do Experimento 2, detalhados na
+\autoref{subsec:carga}, com a adição de uma réplica leitora, conforme descrito
+anteriormente. A configuração do Experimento 2 produz um estado menor devido a quantidade
+de requisições de leitura. Teoricamente esse cenário é favorável para o mecanismo de
+transferência de estado uma vez que a quantidade de dados trafegados pela rede é menor.
+
+Para construção dos cenários experimentais supomos um aglomerado com cinco réplicas, todas
 previamente configuradas com a aplicação de teste. Nosso objetivo é a geração da
 divergência do estado replicado em uma das réplicas, para alcançar esse objetivo iniciamos
 quatro réplicas simultaneamente e postergamos a inicialização de uma das réplicas.
@@ -245,13 +288,15 @@ Definimos então dois instantes no tempo:
     segundos após $t1$.
 \end{itemize}
 
-Nessa configuração, o momento $t1$ possui quatro réplicas votantes prontas para atender as
+Nessa configuração, o momento $t1$ possui quatro réplicas prontas para atender as
 requisições dos clientes e no momento $t2$, a quinta réplica é adicionada ao aglomerado.
 Essa nova réplica, poderá ser votante ou leitora dependendo da configuração do
-experimento, conforme ilustra a \autoref{fig:timeline}. Do ponto de vista do algoritmo
-Paxos, o período entre $t1$ e $t2$ é marcado pela falta de uma réplica, pois devido a
-característica estática para definição do total de réplicas, essa propriedade é
-previamente definida como cinco antes do inicio da execução.
+experimento, conforme ilustra a \autoref{fig:timeline}. Nessa versão de Treplica o
+mecanismo de transferência de estado é exclusivo para replicas leitoras e vamos usar esse
+fator para facilitar a comparação com o mecanismo tradicional de Treplica. Dessa forma,
+ao adicionar uma réplica leitora acionamos o mecanismo de transferência de estado e ao
+adicionar uma réplica votante acionamos o mecanismo de retransmissão de instância de
+consenso (preenchimento de lacunas).
 
 \begin{figure}[ht]
   \centering
@@ -260,33 +305,15 @@ previamente definida como cinco antes do inicio da execução.
   \label{fig:timeline}
 \end{figure}
 
-Nesse cenário a formação de quórum para eleição do consenso durante as rodadas de Paxos só
-não é legitima quando: (1) No intervalo entre $t1$ e $t2$ duas réplicas falham; (2) Após
-$t2$, três máquinas falham.
+Nesse experimento focamos nossa análise no instante $t2$. Vamos medir e comparar o impacto
+no desempenho do aglomerado causado pela adição de uma nova réplica. O foco nesse caso não
+é comparação de réplicas votantes ou leitoras, mas sim os diferentes mecanismos utilizadas
+por elas para receber o estado compartilhado pelo aglomerado.
 
-No entanto, essas restrições só são verdadeiras, se e somente se, a réplica adicionada em
-$t2$ é uma réplica votante formando assim um aglomerado de réplicas votantes. Sendo assim,
-podemos afirmar que a inclusão de uma nova réplica aumenta a tolerância a falhas da
-aplicação e que essa propriedade de sistemas distribuídos, em Treplica, é baseada em
-réplicas votantes. A adição de réplicas votantes não altera a tolerância a falhas da
-aplicação.
-
-Nessa versão da biblioteca Treplica, o mecanismo de transferência de estado é exclusivo
-para réplicas leitoras, abriremos mão da propriedade de tolerância a falhas para
-adicionarmos, no instante $t2$, uma réplica leitora para mensurar o impacto causado pela
-atuação do protocolo de transferência de estado na aplicação. Para criação de uma base de
-comparação, o mesmo teste foi executado adicionando uma réplica votante (sem o mecanismo
-de transferência de estado). Nesse caso, a equalização do estado (preenchimento das
-lacunas) é realizado pelo mecanismo de retransmissão de instância de consenso já existente
-em Treplica.
-
-Notamos nas primeiras execuções do experimento, um estado (em \emph{Megabytes})
-relativamente pequeno e pouco atraente para fins experimentais. Essa característica é
-resultante da carência de uma carga mais pesada nas requisições de escrita da aplicação
-(\autoref{sec:aplicacao}), fator que acarretaria em um aumento mais eficaz do estado.
-Sendo assim, do lado do servidor, a cada requisição de escrita associamos uma
-\emph{String} de aproximadamente 500 bytes para aumento do estado, conforme ilustra a
-\autoref{fig:payload}.
+Para esse experimento foram geradas requisições com uma chave aleatória e um valor de 500
+bytes como na \autoref{fig:payload}. Assim, o estado crescerá proporcionalmente a
+quantidade de requisições, em uma velocidade suficiente para gerar um estado da ordem de
+centenas de \emph{megabytes} no tempo que o experimento executa.
 
 \begin{figure}[ht]
   \centering
@@ -303,43 +330,36 @@ Os passos para execução do experimento de transferência de estado são listad
   \item Iniciar manualmente o serviço do HAProxy em uma instância dedicada para o serviço
     de \emph{load balancer};
   \item Configurar, através de \emph{script}, cinco instâncias que atuarão como
-    servidoras, respeitando os parâmetros que define se a réplica atuará como votante ou
-    leitora. Nesse passo é executado a instalação da JVM e Tomcat (a aplicação de teste
-    foi previamente instalada Tomcat);
+    servidoras, respeitando os parâmetros que definem se a réplica atuará como votante ou
+    leitora. Nesse passo é executado a instalação da JVM e Tomcat, a aplicação de teste
+    foi previamente instalada Tomcat;
   \item Configurar, através de \emph{script}, cinco instâncias dedicadas para o serviço de
     cliente. Nesse passo também é instalado a JVM nas instâncias clientes e o programa de
     teste;
-  \item Iniciar com \emph{script} o serviço do Tomcat em quatro réplicas;
-  \item Iniciar com \emph{script} o programa de teste nas cinco máquinas dedicadas para
-    atuarem como cliente;
-  \item Aguardar 180 segundos;
-  \item Iniciar com \emph{script} o serviço do Tomcat na quinta máquina (retardatária);
-  \item Aguardar mais 180 segundos;
-  \item Através de \emph{script}, encerrar os processos Javas iniciados (cliente e
-    servidor) e recolher os arquivos de \emph{log} dos clientes e servidores.
+  \item Iniciar através de \emph{script} o serviço do Tomcat em quatro réplicas;
+  \item Iniciar através de \emph{script} o programa de teste nas cinco máquinas dedicadas
+    para atuarem como cliente;
+  \item Aguardar 180 segundos e iniciar através de \emph{script} o serviço do Tomcat na
+    quinta máquina (retardatária);
+  \item Aguardar mais 180 segundos e através de \emph{script}, encerrar os processos Javas
+    iniciados (cliente e servidor) e recolher os arquivos de \emph{log} dos clientes e
+    servidores.
 \end{enumerate}
 
 \subsection{Resultados e Análise}
 
-A análise de desempenho para esse cenário visa responder duas questões sobre o mecanismo
-de transferência de estado em Treplica:
+Nesta subseção responderemos as duas perguntas feitas no início dessa seção: (1) Qual é o
+desempenho do mecanismo de transferência de estado? (2) Qual é a melhor estratégia em
+Treplica para recuperação de estado: transferência de estado ou aplicação uma a uma das
+instâncias de consenso?
 
-\begin{enumerate}
-  \item Qual é o desempenho do mecanismo de transferência de estado?
-  \item Qual é a melhor estratégia em Treplica para recuperação de estado: transferência de
-    estado ou aplicação uma a uma das instâncias de consenso?
-\end{enumerate}
+Os valores das métricas foram coletados ao longo de 10 execuções e os valores apresentados
+correspondem a média dessas execuções.
 
-Para responder a primeira pergunta precisamos variar o tamanho do estado para mensurar a
-capacidade do mecanismo de transferência. Para criação de tais cenários, combinamos as
-configurações do Experimento 1 e do Experimento 2, detalhados na \autoref{subsec:carga},
-com a adição de uma réplica leitora, conforme descrito na
-\autoref{sec:experimento_tranferencia_estado}. A configuração do Experimento 2 produz um
-estado menor (em \emph{Megabytes}) devido a quantidade de requisições de leitura.
-Teoricamente esse cenário é favorável para o mecanismo de transferência de estado uma vez
-que a quantidade de dados trafegados pela rede é menor.
+\subsubsection{Desempenho absoluto - Pergunta 1}
 
-Estabelecemos os seguintes parâmetros para coleta e medição de desempenho:
+Para medir o desempenho do mecanismo de transferência de estado estabelecemos os seguintes
+parâmetros para coleta e medição de desempenho:
 
 \begin{itemize}
   \item Tempo total para envio do estado da réplica receptora para réplica doadora,
@@ -351,13 +371,10 @@ Estabelecemos os seguintes parâmetros para coleta e medição de desempenho:
 
 A \autoref{fig:dados_transf_estado} (a) exibe o tamanho do estado transferido pelo
 Experimento 1 (50\% de requisições de leitura) e pelo Experimento 2 (80\% de requisições
-de leitura). O estado do Experimento 1 é desfavorável para ambas as estratégias de
-recuperação de estado de Treplica pois produz um estado maior. Comparando os resultados de
-tempo de transferência (\autoref{fig:dados_transf_estado} (b)) podemos verificar um melhor
-desempenho do Experimento 2 justificada pela diferença no tamanho dos estados nos dois
-experimentos. Podemos afirmar então que o desempenho do mecanismo de transferência de
-estado está ligado diretamente com o tamanho do estado a ser transferido. Em outras
-palavras, quanto maior o estado maior o tempo gasto para transferi-lo.
+de leitura). Comparando os resultados de tempo de transferência, ilustrado na
+\autoref{fig:dados_transf_estado} (b), podemos afirmar que o desempenho do mecanismo de
+transferência de estado está ligado diretamente com o tamanho do estado a ser transferido.
+Em outras palavras, quanto maior o estado maior o tempo gasto para transferi-lo.
 
 \begin{figure}[ht]
   \centering
@@ -387,7 +404,6 @@ Os resultados ilustrado pela \autoref{fig:dados_transf_estado} também são exib
   \bottomrule
 \end{tabular}
 }{
-  \fonte{Produzido pelos autores.}
 }
 \end{table}
 
@@ -408,86 +424,136 @@ Os resultados ilustrado pela \autoref{fig:dados_transf_estado} também são exib
   \bottomrule
 \end{tabular}
 }{
-  \fonte{Produzido pelos autores.}
 }
 \end{table}
 
-Conforme descrito na \autoref{subsec:funcionamento_protocolo}, o protocolo de
-transferência de estado utiliza uma conexão TCP ponto a ponto entre a réplica doadora e
-receptora. Essa é uma variável não controlada que pode limitar o desempenho da
-transferência de estado. Uma outra possível abordagem, não pertencente ao escopo desse
-trabalho é a utilização de um mecanismo colaborativo para envio do estado, onde partes do
-estado seriam enviados por diferentes réplicas doadoras, semelhante ao protocolo P2P.
-Gostaríamos de saber qual será o impacto que essa abordagem pode causar no desempenho de
-Paxos.
+Considerando o tempo de transferência e o tamanho do estado, podemos calcular a vazão em
+\emph{Megabytes}/segundo que o mecanismo de transferência de estado atingiu. Também
+podemos calcular a o consumo de banda que foi utilizada por cada transferência. A
+\autoref{fig:vazao_transf} ilustra esses dois cálculos, analisando os resultados podemos
+verificar que o mecanismo de transferência de estado utiliza a banda disponível de forma
+eficiente.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=14cm]{conteudo/capitulos/figuras/vazao-transf.eps}
+  \caption{Vazão transferência de estado}
+  \label{fig:vazao_transf}
+\end{figure}
+
+\begin{table}[htb]
+\IBGEtab{
+  \caption{Vazão transferência de estado}
+  \label{tab:dados_vazao}
+}{
+  \begin{tabular}{ccc}
+  \toprule
+  Estado (Mb) & Vazão (Mbps) & Consumo da banda (\%)  \\
+  \midrule \midrule
+  140.59      & 614          & 61                     \\
+  85.096M     & 531          & 53                     \\
+  \bottomrule
+\end{tabular}
+}{
+}
+\end{table}
+
+Colocar texto aqui sobre rsync!
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=14cm]{conteudo/capitulos/figuras/dados-rsync.eps}
+  \caption{Resultado transferência transferência de arquivo com rsync}
+  \label{fig:dados_rsync}
+\end{figure}
+
+\begin{table}[htb]
+\IBGEtab{
+  \caption{Desempenho da transferência de arquivo com rsync}
+  \label{tab:dados_rsync}
+}{
+  \begin{tabular}{ccc}
+  \toprule
+                & Arquivo 140.59Mb & Arquivo 85.096Mb \\
+  \midrule \midrule
+  Média         & 2.084s           & 1.357s            \\
+  \midrule
+  Mediana       & 2.081s           & 1.317s            \\
+  \midrule
+  Desvio Padrão & 0.012            & 0.122             \\
+  \bottomrule
+\end{tabular}
+}{
+}
+\end{table}
+
+\subsubsection{Desempenho relativo - Pergunta 2}
 
 A segunda pergunta definida no início dessa seção é referente a escolha da melhor
-estratégia de Treplica para recuperação de estado. Para responde-la vamos comparar as
+estratégia de Treplica para recuperação de estado. Para respondê-la vamos comparar as
 execuções do experimento da \autoref{sec:experimento_tranferencia_estado}, onde
-adicionamos ao aglomerado uma nova réplica: ora uma réplica votante ora uma réplica
-leitora. O período de análise está concentrado no momento da adição da réplica.
-Compararemos os dois mecanismos de recuperação de estado analisando a quantidade de
-operações por segundo atendidas em um espaço de 30 segundos de execução. O período de
-análise contém registros de 10 segundos antes da adição da réplica e 20 segundos após a
-adição.
+adicionamos ao aglomerado uma nova réplica usando o mecanismo tradicional de Treplica
+(réplica votante) ou o nova réplica proposta (réplica leitora). O período de análise está
+concentrado ao redor do tempo $t2$. Compararemos os dois mecanismos de recuperação de
+estado analisando a quantidade de operações por segundo atendidas em um espaço de 30
+segundos de execução. O período de análise contém registros de 10 segundos antes da $t2$ e
+20 segundos após $t2$.
 
-Continuamos com a mesma configuração de carga definidas pelos Experimento 1 e 2, só que
-executados em dois cenários diferentes:
+Continuamos com a mesma configuração de carga definidas pelos Experimentos 1 e 2. A
+\autoref{fig:transf_estado_cenario1} ilustra a vazão instantânea do experimento que
+adiciona réplicas votantes e leitoras com escala de 5 segundos durante o período de
+análise configurado para 30 segundos, tomada como média das 10 execuções. Assim que o
+balanceador de carga detecta a presença de uma nova réplica, começa a rotear requisições
+da aplicação para ela. Essa nova réplica também passa a receber mensagens do protocolo
+Paxos oriundas das outras réplicas do aglomerado.
 
-\begin{itemize}
-  \item Cenário 1: Execução da carga do Experimento 1 (50\% de requisições de leitura)
-    adicionando uma réplica votante e leitora;
-  \item Cenário 2: Execução da carga do Experimento 2 (80\% de requisições de leitura)
-    adicionando uma réplica votante e leitora;
-\end{itemize}
-
-Vamos começar nossa análise pelo Cenário 1. Analisando a
-\autoref{fig:transf_estado_cenario1} (a), podemos verificar um grande vale no momento da
-adição de uma réplica votante, que chamaremos de $r1$. Assim que o balanceador de carga
-detecta que $r1$ está ativa, começa a rotear requisições da aplicação e $r1$ também passa
-a receber mensagens do protocolo Paxos oriundas das outras réplicas do aglomerado. Nesse
-momento, o mecanismo detector de lacunas de $r1$ também ativo solicitando o histórico de
-decisões de consenso do aglomerado. Em outras palavras, o estado do aglomerado está sendo
-replicado, instância por instância, em $r1$. A adição de $r1$ causa uma alteração no
-desempenho do aglomerado (em termos de operações pro segundo suportada) que é retomado
-instantes depois.
+Analisando especificamente a \autoref{fig:transf_estado_cenario1} (a), podemos verificar
+um vale acentuado no momento da adição da réplica votante $rv$. A transferência de estado
+tradicional utilizado por $rv$, o estado é replicado instância por instância. Fica claro
+que a adição de $rv$ causa uma alteração no desempenho do aglomerado que desaparece
+instantes depois quando a recuperação termina.
 
 Por outro lado, a \autoref{fig:transf_estado_cenario1} (b) ilustra o impacto da adição de
-uma réplica leitora $r2$. Podemos verificar uma alteração no número de operações
-suportadas quando $r2$ é adicionado. Porém, fica claro que o distúrbio causado pela
-adição de uma réplica leitora é menor. Nesse caso, a replicação de estado em $r2$ acontece
+uma réplica leitora $rl$. Podemos verificar uma alteração no número de operações
+suportadas quando $rl$ é adicionada. Porém, fica claro que o distúrbio causado pela
+adição de uma réplica leitora é menor. Nesse caso, a replicação de estado em $rl$ acontece
 através da atuação do mecanismo de transferência de estado. Ou seja, o estado é
-transferido em uma única mensagem (\emph{bucket}) causando menos impacto no desempenho do
-aglomerado.
+transferido usando um mecanismo de lote mais eficiente (TCP), causando menos impacto no
+desempenho do aglomerado.
 
 \begin{figure}[ht]
   \centering
   \includegraphics[width=14cm]{conteudo/capitulos/figuras/final-transf-estado-pr50.eps}
-  \caption{Desempenho da adição de uma nova réplica no Cenário 1}
+  \caption{Desempenho da adição de uma nova réplica no Experimento 1}
   \label{fig:transf_estado_cenario1}
 \end{figure}
 
-O Cenário 2 está configurado com um maior número de requisições de leitura, a
-\autoref{fig:transf_estado_cenario1} ilustra seu desempenho. Mais uma vez podemos observar
-menos impacto no número de requisições quando adicionamos uma réplica leitora,
-caracterizando assim o bom desempenho do mecanismo de transferência de estado nos dois
-cenários experimentais.
+O Experimento 2 está configurado com um maior número de requisições de leitura, a
+\autoref{fig:transf_estado_cenario2} ilustra seu desempenho, forma similar a
+\autoref{fig:transf_estado_cenario1}. Mais uma vez podemos observar menos impacto no
+número de requisições quando adicionamos uma réplica leitora, caracterizando assim o bom
+desempenho do mecanismo de transferência de estado nos dois cenários experimentais.
 
 \begin{figure}[ht]
   \centering
   \includegraphics[width=14cm]{conteudo/capitulos/figuras/final-transf-estado-pr80.eps}
-  \caption{Desempenho da adição de uma nova réplica no Cenário 2}
+  \caption{Desempenho da adição de uma nova réplica no Experimento 2}
   \label{fig:transf_estado_cenario2}
 \end{figure}
+
+A \autoref{fig:analise_final_transf_estado} resume desempenho total do sistema ao longo do
+período de análise, medido pelo número de operações por segundo atendidas e pelo tempo de
+resposta dessas requisições. O efeito causado pela redução de mensagens solicitando o
+envio do histórico das decisões de consenso também são benéficos quando analisamos o
+desempenho das duas estratégias, conforme ilustrado na
+\autoref{fig:analise_final_transf_estado} (a).
 
 A maior diferença entre a adição de uma réplica votante ou leitora está no tempo de
 resposta do período de análise. Nesse caso estamos comparando os mecanismos de
 transferência de estado configurado nas duas réplicas. Analisando o resultado ilustrado na
-\autoref{fig:analise_final_transf_estado} (a) fica claro, que para esses cenários de
+\autoref{fig:analise_final_transf_estado} (b) fica claro, que para esses cenários de
 testes a melhor escolha para transferência de estado é a utilização do mecanismo proposto
-por esse trabalho. O efeito causado pela redução de mensagens solicitando o envio do
-histórico das decisões de consenso também são benéficos quando analisamos o desempenho das
-duas estratégias, conforme ilustrado na \autoref{fig:analise_final_transf_estado} (b).
+por esse trabalho.
 
 \begin{figure}[ht]
   \centering
@@ -496,11 +562,11 @@ duas estratégias, conforme ilustrado na \autoref{fig:analise_final_transf_estad
   \label{fig:analise_final_transf_estado}
 \end{figure}
 
-Quando comparamos os dois cenários, podemos verificar que o Cenário 2 consegue suportar
-mais operações por segundo (\autoref{fig:analise_final_transf_estado} (a)). Isso se deve
-ao fato da redução de iterações entre as réplicas requiridas por uma requisição de
-leitura, predominante no Cenário 2. Os resultados ilustrado pela
-\autoref{fig:dados_transf_estado} também são exibidos na
+Quando comparamos os dois experimentos, podemos verificar que o Experimento 2 consegue
+suportar mais operações por segundo (\autoref{fig:analise_final_transf_estado} (a)). Isso
+se deve ao fato da redução de iterações entre as réplicas requiridas por uma requisição de
+leitura, predominante no Experimento 2. Os resultados ilustrado pela
+\autoref{fig:analise_final_transf_estado} também são exibidos na
 \autoref{tab:adicionando_replica_votante} (adicionando uma réplica votante) e na
 \autoref{tab:adicionando_replica_leitora} (adicionando uma réplica leitora).
 
@@ -509,17 +575,16 @@ leitura, predominante no Cenário 2. Os resultados ilustrado pela
   \caption{Desempenho para incorporação de uma réplica votante}
   \label{tab:adicionando_replica_votante}
 }{
-  \begin{tabular}{ccc}
+  \begin{tabular}{ccccc}
   \toprule
-  Leitura & Operações por Segundo & Tempo de Resposta (ms) \\
+  Leitura & Operações/segundo & Desvio Padrão & Tempo de Resposta (ms) & Desvio Padrão \\
   \midrule \midrule
-  50\%    & 2862.933              & 875.824                \\
+  50\%    & 2862.933          & 54.491        & 875.824                & 61.181        \\
   \midrule
-  80\%    & 3698.806              & 1095.644               \\
+  80\%    & 3698.806          & 33.976        & 1095.644               & 43.157        \\
   \bottomrule
 \end{tabular}
 }{
-  \fonte{Produzido pelos autores.}
 }
 \end{table}
 
@@ -528,17 +593,16 @@ leitura, predominante no Cenário 2. Os resultados ilustrado pela
   \caption{Desempenho para incorporação de uma réplica leitora}
   \label{tab:adicionando_replica_leitora}
 }{
-  \begin{tabular}{ccc}
+  \begin{tabular}{cccccc}
   \toprule
-  Leitura & Operações por Segundo & Tempo de Resposta (ms) \\
+  Leitura & Operações/segundo & Desvio Padrão & Tempo de Resposta (ms) & Desvio Padrão \\
   \midrule \midrule
-  50\%    & 3065.096              & 136.065                \\
+  50\%    & 3065.096          & 36.611        & 136.065                & 13.540        \\
   \midrule
-  80\%    & 4164.806              & 227.890                \\
+  80\%    & 4164.806          & 32.920        & 227.890                & 10.049        \\
   \bottomrule
 \end{tabular}
 }{
-  \fonte{Produzido pelos autores.}
 }
 \end{table}
 
@@ -719,7 +783,4 @@ réplicas votantes e leitoras).
   \fonte{Produzido pelos autores.}
 }
 \end{table}
-
-
-\section{Conclusão}\label{sec:conclusao}
 
