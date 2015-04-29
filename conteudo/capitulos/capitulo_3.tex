@@ -462,7 +462,7 @@ Colocar texto aqui sobre rsync!
 
 \begin{figure}[ht]
   \centering
-  \includegraphics[width=14cm]{conteudo/capitulos/figuras/dados-rsync.eps}
+  \includegraphics[width=7cm]{conteudo/capitulos/figuras/dados-rsync.eps}
   \caption{Resultado transferência transferência de arquivo com rsync}
   \label{fig:dados_rsync}
 \end{figure}
@@ -548,12 +548,26 @@ envio do histórico das decisões de consenso também são benéficos quando ana
 desempenho das duas estratégias, conforme ilustrado na
 \autoref{fig:analise_final_transf_estado} (a).
 
+Para o Experimento 1 a proposta de transferência de estado obteve um desempenho $7.06\%$
+superior (202,163 operações por segundo), enquanto que no Experimento 2 o aumento de
+desempenho foi de $12.60\%$ (466 operações por segundo). Realizamos um teste-t
+independente para cada uma dessas duas diferenças e o resultado produziu um valor $t$
+estatisticamente significativo para o Experimento 1 ($t_{(10)}=9.74$, $p < 0.0001$) e para
+o Experimento 2 ($t_{(10)}=31.15$, $p < 0.0001$).
+
 A maior diferença entre a adição de uma réplica votante ou leitora está no tempo de
 resposta do período de análise. Nesse caso estamos comparando os mecanismos de
-transferência de estado configurado nas duas réplicas. Analisando o resultado ilustrado na
-\autoref{fig:analise_final_transf_estado} (b) fica claro, que para esses cenários de
-testes a melhor escolha para transferência de estado é a utilização do mecanismo proposto
-por esse trabalho.
+transferência de estado configurado nas duas réplicas. No Experimento 1 o mecanismo de
+transferência de estado obteve tempos de resposta $84.46\%$ menores (739.76 ms) que a
+reexecução individual de operações, enquanto que no Experimento 2 a melhora foi de
+$79.20\%$ (867.75 ms). Novamente, realizamos um teste-t independente para cada uma dessas
+duas diferenças e o resultado produziu um valor $t$ estatisticamente significativo para o
+Experimento 1 ($t_{(10)}=37.33$, $p < 0.0001$) e para o Experimento 2 ($t_{(10)}=61.93$,
+$p < 0.0001$).
+
+Analisando o resultado ilustrado na \autoref{fig:analise_final_transf_estado} (b) fica
+claro, que para esses cenários de testes a melhor escolha para transferência de estado é a
+utilização do mecanismo proposto por esse trabalho.
 
 \begin{figure}[ht]
   \centering
@@ -612,25 +626,16 @@ leitura, predominante no Experimento 2. Os resultados ilustrado pela
 Para validar a hipótese que réplicas leitoras podem aumentar o desempenho de um sistema
 que utiliza Paxos, precisamos de uma carga de trabalho na qual uma parcela significativa
 das requisições solicitadas sejam de leitura, pois essas réplicas não participam da
-eleição de consenso. Para esse experimento utilizaremos a mesma aplicação descrita a
-\autoref{sec:aplicacao} que também foi utilizada nos experimentos de transferência de
-estado (\autoref{sec:experimento_tranferencia_estado}).
+eleição de consenso. Para esse experimento utilizamos a aplicação descrita na
+\autoref{sec:aplicacao}, fazendo uma combinação de réplicas com diferentes graus de uso de
+memória persistente. Nosso objetivo aqui é medir o desempenho de um aglomerado com
+réplicas votantes e leitoras, executamos cada experimento 10 vezes e os valores
+apresentados correspondem a média dessas execuções.
 
-Fundamentamos esse experimento na combinação de réplicas com diferentes graus de uso de
-memória persistente. Nosso objetivo aqui é mensurar o desempenho de um aglomerado com
-réplicas votantes e leitoras, para isso fizemos diversas execuções do experimento com
-diferentes combinações de réplicas.
-
-Nesse experimento iniciamos a aplicação nas réplicas servidoras no mesmo instante de tempo
-para evitar possíveis influências de outros componentes alterados em Treplica. Dessa
-forma, no instante $t1$ onde se inicia a execução das requisições dos clientes, todas as
-réplicas participantes do experimento já foram detectadas como ativa pelo servidor HAProxy
-e estão prontas para tratar as requisições roteadas.
-
-Utilizamos cinco réplicas para configuração do aglomerado com duas formações diferentes:
-(1) Para criarmos uma base de comparação na primeira formação do aglomerado todas as
-réplicas são votantes, conforme ilustra a \autoref{fig:timeline_exp_leitora} (a); (2) Na
-segunda formação combinamos 3 réplicas ativas com 2 réplicas leitoras
+Supomos duas formações diferentes de aglomerado para execução dos experimentos, ambas com
+cinco réplicas cada: (1) cinco réplicas votantes para criação de uma base de comparação,
+conforme ilustra a \autoref{fig:timeline_exp_leitora} (a); e (2) combinação de três
+réplicas votantes e duas réplicas leitoras, conforme ilustra
 \autoref{fig:timeline_exp_leitora} (b).
 
 \begin{figure}[ht]
@@ -640,12 +645,18 @@ segunda formação combinamos 3 réplicas ativas com 2 réplicas leitoras
   \label{fig:timeline_exp_leitora}
 \end{figure}
 
-Nesse cenário a legitimidade na formação de quórum para eleição do consenso durante as
-rodadas de Paxos depende da formação utilizada. Na formação 1 não conseguimos consenso
-quando três réplicas falham enquanto a formação 2 tolera falha em apenas duas réplicas.
-Podemos afirmar então que a tolerância a falhas em Treplica está ligada diretamente como o
-número de réplicas votantes existentes na formação do aglomerado, sendo assim, a formação
-1 é mais tolerante a falhas.
+O tamanho do quórum para eleição do consenso durante as rodadas de Paxos depende da
+formação utilizada. Na Configuração 1 não conseguimos consenso quando três réplicas falham
+enquanto a Configuração 2 tolera falha em apenas duas réplicas. Podemos afirmar então que
+a tolerância a falhas em Treplica está ligada diretamente como o número de réplicas
+votantes existentes no aglomerado, sendo assim, a Configuração 1 é mais tolerante a
+falhas.
+
+Nesse experimento iniciamos a aplicação nas réplicas no mesmo instante de tempo para
+evitar possíveis influências de outros componentes alterados em Treplica. Dessa forma, no
+instante $t1$ onde se inicia a execução das requisições dos clientes, todas as réplicas
+participantes do experimento já foram detectadas como ativas pelo servidor HAProxy e estão
+aptas para processar requisições da aplicação.
 
 \subsection{Procedimento de teste}\label{subsec:procedimento_teste_leitora}
 
@@ -656,18 +667,18 @@ listados a seguir:
   \item Iniciar manualmente o serviço do HAProxy em uma instância dedicada para o serviço
     de \emph{load balancer};
   \item Configurar, através de \emph{script}, as réplicas que atuarão como servidoras,
-    respeitando os parâmetros que define se a réplica atuará como votante ou leitora.
-    Nesse passo é executado a instalação da JVM e Tomcat (a aplicação de teste foi
-    previamente instalada Tomcat);
+    respeitando a configuração de teste desejada. Nesse passo é executado a instalação da
+    JVM e Tomcat, a aplicação de teste foi previamente instalada Tomcat;
   \item Configurar, através de \emph{script}, cinco instâncias dedicadas para o serviço de
     cliente. Nesse passo também é instalado a JVM nas instâncias clientes e o programa de
     teste;
-  \item Iniciar com \emph{script} o serviço do Tomcat em todas as réplicas servidoras;
-  \item Iniciar com \emph{script} o programa de teste nas cinco máquinas dedicadas para
-    atuarem como cliente;
-  \item Aguardar mais 360 segundos;
-  \item Através de \emph{script}, encerrar os processos Javas iniciados (cliente e
-    servidor) e recolher os arquivos de \emph{log} dos clientes e servidores.
+  \item Iniciar através de \emph{script} o serviço do Tomcat em todas as réplicas
+    servidoras;
+  \item Iniciar através de \emph{script} o programa de teste nas cinco máquinas dedicadas
+    para atuarem como cliente;
+  \item Aguardar 360 segundos, e através de \emph{script}, encerrar os processos Javas
+    iniciados (cliente e servidor) e recolher os arquivos de \emph{log} dos clientes e
+    servidores.
 \end{enumerate}
 
 Aqui, diferentemente do experimento de transferência de estado, iniciamos a aplicação nas
@@ -675,8 +686,8 @@ instâncias que atuam como servidoras simultaneamente.
 
 \subsection{Resultados e Análise}
 
-Para análise desse experimento consideraremos as cargas do Experimento 1 e do Experimento
-2 que já foram definidas na \autoref{subsec:carga}. Conforme descrito na
+Para análise desse experimento consideraremos as cargas do Experimento 1 e 2, que já foram
+definidas na \autoref{subsec:carga}. Conforme descrito na
 \autoref{subsec:procedimento_teste_leitora}, em todas as execuções desse experimento as
 réplicas foram iniciadas simultaneamente. Sendo assim, eventuais sobrecargas na
 inicialização de réplicas leitoras foram eliminadas pois não existe nenhum estado para ser
@@ -684,54 +695,19 @@ transferido. Em outras palavras, no momento que os geradores de carga iniciam to
 réplicas compartilham do mesmo estado vazio.
 
 Nesse experimento redefinimos o período de análise para 260 segundos de execução. Foram
-descartamos os 20 segundos inciais e finais visando eliminar eventuais \emph{outliers}. A
-análise de desempenho para esse cenário visa responder uma questão: Qual é o desempenho de
-uma réplica leitora?
+descartamos os 20 segundos iniciais e finais visando eliminar efeitos transientes do
+início e término da aplicação. A análise de desempenho para esse cenário visa responder
+uma questão: Qual é o desempenho de uma réplica leitora?
 
-Para responder essa pergunta, vamos comparar a execução de dois cenários distintos:
+Para responder essa pergunta, vamos comparar a execução das Configurações 1 e 2 no
+Experimento 1 (50\% de requisições de leitura) e Experimento 2 (80\% de requisições de
+leitura), executando dez vezes cada uma das quatro combinações de configuração e
+experimento.
 
-\begin{itemize}
-  \item Cenário 1: Execução da carga do Experimento 1 (50\% de requisições de leitura)
-    em um aglomerado com: (1) 5 réplicas votantes; (2) 3 réplicas votantes e 2 réplicas
-    leitoras;
-  \item Cenário 2: Execução da carga do Experimento 2 (80\% de requisições de leitura)
-    com a mesma formação de aglomerados do Cenário 1;
-\end{itemize}
-
-O desempenho do Cenário 1 é ilustrado pela \autoref{fig:replica_leitora_cenario1}.
-Analisando os resultados não podemos afirmar qual formação de aglomerado teve o melhor
-desempenho. Podemos notar que o desempenho do aglomerado configurado somente com réplicas
-votantes (\autoref{fig:replica_leitora_cenario1} (a)) é semelhante ao desempenho do
-aglomerado com réplicas leitoras ((\autoref{fig:replica_leitora_cenario1} (b)). O
-desempenho das réplicas leitoras nesse cenário é animador, visto que essa é a configuração
-experimental que mais exige participação de réplicas votantes.
-
-\begin{figure}[ht]
-  \centering
-  \includegraphics[width=14cm]{conteudo/capitulos/figuras/final-replica-leitora-pr50.eps}
-  \caption{Comparação do desempenho dos aglomerados no Cenário 1}
-  \label{fig:replica_leitora_cenario1}
-\end{figure}
-
-O mesma análise do Cenário 1 pode ser replicada para o Cenário 2, conforme ilustra a
-\autoref{fig:replica_leitora_cenario1}. Novamente nenhuma afirmação pode ser feita sobre
-qual é a melhor formação de aglomerado. Esse é mais uma resultado positivo para as réplicas
-as leitoras que conseguem se equiparar o desempenho de réplicas votantes e possuem uma
-grande vantagem: adição/remoção sem necessidade de reconfiguração total. Essa
-flexibilidade no redimensionamento do aglomerado utilizando réplicas leitoras passa a ser
-um diferencial a ser explorado em Treplica.
-
-\begin{figure}[ht]
-  \centering
-  \includegraphics[width=14cm]{conteudo/capitulos/figuras/final-replica-leitora-pr80.eps}
-  \caption{Comparação do desempenho dos aglomerados no Cenário 2}
-  \label{fig:replica_leitora_cenario2}
-\end{figure}
-
-Vamos agora analisar os resultados de uma perspectiva diferente, a
-\autoref{fig:analise_final_replica_leitora} ilustra a comparação do número de requisições
-suportadas e tempo de respostas nos dois cenários experimentais. Fica evidente a
-semelhança no desempenho das duas formações do aglomerado nesses dois critérios.
+A \autoref{fig:analise_final_replica_leitora} ilustra a comparação do número médio de
+requisições atendidas e tempo de resposta dessas requisições medidos no período de análise
+para os dois experimentos. Fica evidente a semelhança no desempenho das duas configurações
+do aglomerado nesses dois critérios.
 
 \begin{figure}[ht]
   \centering
@@ -751,17 +727,16 @@ réplicas votantes e leitoras).
   \caption{Desempenho com réplicas leitoras}
   \label{tab:desempenho_com_replica_leitora}
 }{
-  \begin{tabular}{ccc}
+  \begin{tabular}{ccccc}
   \toprule
-  Leitura & Operações por Segundo & Tempo de Resposta (ms) \\
+  Leitura & Operações/segundo & Desvio Padrão & Tempo de Resposta (ms) & Desvio Padrão \\
   \midrule \midrule
-  50\%    & 3118.375              & 251.804                \\
+  50\%    & 3118.375          & 40.235        & 251.804                & 2.787         \\
   \midrule
-  80\%    & 4314.798              & 176.524                \\
+  80\%    & 4314.798          & 14.468        & 176.524                & 0.194         \\
   \bottomrule
 \end{tabular}
 }{
-  \fonte{Produzido pelos autores.}
 }
 \end{table}
 
@@ -770,17 +745,22 @@ réplicas votantes e leitoras).
   \caption{Desempenho sem réplicas leitoras}
   \label{tab:desempenho_sem_replica_leitora}
 }{
-  \begin{tabular}{ccc}
+  \begin{tabular}{ccccc}
   \toprule
-  Leitura & Operações por Segundo & Tempo de Resposta (ms) \\
+  Leitura & Operações/segundo & Desvio Padrão & Tempo de Resposta (ms) & Desvio Padrão \\
   \midrule \midrule
-  50\%    & 3159.908              & 248.718                \\
+  50\%    & 3159.908          & 35.738        & 248.718                & 2.808         \\
   \midrule
-  80\%    & 4262.307              & 179.123                \\
+  80\%    & 4262.307          & 13.246        & 179.123                & 0.231         \\
   \bottomrule
 \end{tabular}
 }{
-  \fonte{Produzido pelos autores.}
 }
 \end{table}
+
+Mesmo pequena a diferença é estatisticamente significativa (p=0,002). Esse é mais uma
+resultado positivo para as réplicas as leitoras que conseguem se equiparar o desempenho de
+réplicas votantes e possuem uma grande vantagem: adição/remoção sem necessidade de
+reconfiguração total. Essa flexibilidade no redimensionamento do aglomerado utilizando
+réplicas leitoras passa a ser um diferencial a ser explorado em Treplica.
 
