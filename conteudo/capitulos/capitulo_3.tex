@@ -53,13 +53,6 @@ dos experimentos. A \autoref{sec:experimento_tranferencia_estado} e
 transferência de estado e de réplicas leitoras com seus respectivos resultados e análise.
 Encerramos o capitulo com a \autoref{sec:conclusao} apresentando as considerações finais.
 
-\section{Visão Geral}
-
-Colocar texto aqui, falar com Gustavo.
-
-\section{Ambiente de Aglomerado}
-
-Colocar texto aqui, falar com Gustavo.
 
 \section{Aplicação}\label{sec:aplicacao}
 
@@ -451,21 +444,21 @@ eficiente.
   Estado (Mb) & Vazão (Mbps) & Consumo da banda (\%)  \\
   \midrule \midrule
   140.59      & 614          & 61                     \\
-  85.096M     & 531          & 53                     \\
+  85.096      & 531          & 53                     \\
   \bottomrule
 \end{tabular}
 }{
 }
 \end{table}
 
-Colocar texto aqui sobre rsync!
-
-\begin{figure}[ht]
-  \centering
-  \includegraphics[width=7cm]{conteudo/capitulos/figuras/dados-rsync.eps}
-  \caption{Resultado transferência transferência de arquivo com rsync}
-  \label{fig:dados_rsync}
-\end{figure}
+Para ter uma ideia da dimensão dos resultados obtidos com o mecanismo de transferência de
+estado, executamos um experimento simples utilizando a ferramenta
+rsync\footnote{\url{https://rsync.samba.org}}. Essa não é uma comparação justa devido as
+diferenças entre os mecanismos. A \autoref{tab:dados_rsync} exibe a média de 10 execuções
+do comando \classname{rsync -W} para dois arquivos que se equivalem em tamanho com os
+estados transferidos nos experimentos. Podemos observar que a vazão obtida nos
+experimentos utilizando o mecanismo de transferência de estado proposto é superior a vazão
+obtida com a ferramenta rsync.
 
 \begin{table}[htb]
 \IBGEtab{
@@ -474,13 +467,17 @@ Colocar texto aqui sobre rsync!
 }{
   \begin{tabular}{ccc}
   \toprule
-                & Arquivo 140.59Mb & Arquivo 85.096Mb \\
+                   & Arquivo 140.59Mb & Arquivo 85.096Mb \\
   \midrule \midrule
-  Média         & 2.084s           & 1.357s            \\
+  Média            & 2.084s           & 1.357s           \\
   \midrule
-  Mediana       & 2.081s           & 1.317s            \\
+  Mediana          & 2.081s           & 1.317s           \\
   \midrule
-  Desvio Padrão & 0.012            & 0.122             \\
+  Desvio Padrão    & 0.012            & 0.122            \\
+  \midrule
+  Vazão            & 515Mbps          & 479Mbps          \\
+  \midrule
+  Consumo da banda & 51\%             & 47\%             \\
   \bottomrule
 \end{tabular}
 }{
