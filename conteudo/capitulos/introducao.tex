@@ -7,9 +7,9 @@ envolvem algum tipo de computação distribuída \cite{cachin11}. Podemos defini
 distribuídos como um conjunto de servidores (físicos ou virtuais) independentes que
 apresentam-se a seus usuários como um sistema único e coerente \cite{tanenbaum07}. Também
 é verdade que as falhas nos servidores podem ocorrer de maneira independente. Essa noção
-de falhas parciais, levou \citeonline{cachin11} a definir que sistemas distribuídos são
-sistemas onde a falha de uma máquina que você nem sabia que existia pode tornar sua
-própria máquina inutilizável.
+de falhas parciais é bem ilustrada pela definição bem humorada apresentada por
+\citeonline{lamport87} que define sistemas distribuídos como sistemas onde a falha de uma
+máquina que você nem sabia que existia pode tornar sua própria máquina inutilizável.
 
 Quando existe uma falha em um servidor, o desafio para os que ainda estão operacionais é
 manter consistência na sincronização de suas atividades. Ou seja, a colaboração entre os
@@ -22,8 +22,8 @@ Uma estratégia amplamente empregada em sistemas distribuídos para prover toler
 falhas e aumento na capacidade de processamento é a replicação de dados. A
 \emph{replicação ativa} \cite{schneider90} é uma estratégia de replicação voltada para
 manutenção de um mesmo estado compartilhado entre servidores que atendem requisições de
-uma mesma aplicação, sendo cada um desses servidores chamado de \emph{réplica}. A
-replicação ativa é baseada na re-execução em cada uma das réplicas as operações que
+uma mesma aplicação, sendo cada um desses servidores chamados de \emph{réplica}. A
+replicação ativa é baseada na re-execução em cada uma das réplicas das operações que
 alteram o estado compartilhado, devidamente ordenadas por um algoritmo apropriado
 \cite{schneider90}. Dentre os vários algoritmos de replicação, um dos mais amplamente
 usados e estudados atualmente é o algoritmo Paxos \cite{lamport98}.
@@ -32,60 +32,54 @@ Algoritmos de replicação são parte fundamental de várias arquiteturas distri
 software \cite{chandra07, hupfeld08b, maccormick04}, sendo particularmente usados como
 soluções para coordenação entre processos que implementam aplicações com garantias de
 consistência relaxadas \cite{burrows06} ou fazendo parte de algum esquema hierárquico de
-bloqueios \cite{lampson96}. De forma geral, é incomum encontrar aplicações onde a parte
-principal do processamento acontece através de replicação ativa devido ao fato que essa
-estratégia possui um custo considerável em termos do número de mensagens trocadas, o que
-limita a escalabilidade do sistema além de algumas poucas réplicas \cite{lampson96}.
-
-Acreditamos que seja possível utilizar replicação ativa não só como substrato de apoio a
-coordenação de aplicações distribuídas de baixo acoplamento, mas também como base para a
-construção de uma aplicação completa. Com esse objetivo, a biblioteca de replicação
-Treplica \cite{vieira08a, vieira-tr10b} foi projetada para o modelo computacional
-\emph{falha-e-recuperação assíncrono} e provém uma forma simples e orientada a objetos a
-construção de aplicações altamente confiáveis. Através de uma interface de programação
-simples, Treplica permite que o projetista da aplicação pense em termos de operações com
-semântica sequencial, similar àquela encontrada em sistemas de processamento transacional.
-Utilizando essa biblioteca, ou soluções similares, a aplicação resultante preserva a
-consistência de uma aplicação centralizada e adiciona a tolerância a falhas de uma
-aplicação distribuída.
+bloqueios \cite{lampson96}. Um exemplo que permite a replicar a aplicação usando
+replicação ativa é a biblioteca Treplica \cite{vieira08a, vieira-tr10b} que provê uma
+forma simples e orientada a objetos a construção de aplicações altamente confiáveis.
+Utilizando essa biblioteca, a aplicação resultante preserva a consistência de uma
+aplicação centralizada e adiciona a tolerância a falhas de uma aplicação distribuída. Por
+outro lado, é incomum encontrar aplicações onde a parte principal do processamento
+acontece através de replicação ativa devido ao fato que essa estratégia possui um custo
+considerável em termos do número de mensagens trocadas, o que limita a escalabilidade do
+sistema além de algumas poucas réplicas \cite{lampson96}.
 
 Apesar da maior confiabilidade, construir uma aplicação somente com replicação ativa
 potencialmente limita o quanto que essa aplicação pode tirar proveito dos ganhos de escala
 advindos de ser uma aplicação distribuída. Resultados experimentais mostram o impacto
-negativo do aumento da escala no desempenho da implementação de Paxos encontrada em
-Treplica \cite{vieira09}. Gostaríamos de ser ser capazes de, não só tornar a capacidade de
-processamento proporcional ao número de servidores empregados, mas também de variar essa
-capacidade dinamicamente em resposta às mudanças da demanda gerada. Dessa forma, teríamos
-aplicações com a simplicidade de programação de aplicações centralizadas e características
-de aplicações distribuídas.
+negativo do aumento da escala no desempenho da implementação de Paxos encontrada na
+biblioteca de replicação Treplica \cite{vieira09}. Gostaríamos de ser ser capazes de, não
+só tornar a capacidade de processamento proporcional ao número de servidores empregados,
+mas também de variar essa capacidade dinamicamente em resposta às mudanças da demanda
+gerada. Dessa forma, teríamos aplicações com a simplicidade de programação de aplicações
+centralizadas e características de aplicações distribuídas.
 
-Nesse trabalho cobiçamos transformar Treplica em uma biblioteca reconfigurável. O problema
-de reconfiguração é complexo, principalmente na presença de falhas e assincronia. Sua
-resolução pode ser obtida através de duas estratégias: (1) baseado em transições de visões
-do conjunto de réplicas operacionais \cite{birman87a, birman87b}; (2) definição, via
-consenso, de uma nova configuração a partir da construção de uma barreira que, quando
-alcançada pelas réplicas, faz com que elas abandonem a configuração vigente e ingressem na
-nova configuração definida (caso elas façam parte dela) \cite{lamport10}. Em geral,
-sistemas de replicação ativa não suportam mecanismo de reconfiguração, sendo definidos
-como grupos de processos estáticos \cite{chandra96, lamport98}. Do ponto de vista teórico,
-podemos encontrar um tratamento formal do problema~\cite{lamport10}, mas sistemas práticos
-tendem a evitar esta questão de forma a simplificar a construção do sistema
-\cite{chandra07}.
+Nesse trabalho queremos explorar a questão da reconfiguração em sistemas de replicação
+ativa. Em particular, cobiçamos transformar Treplica em uma biblioteca reconfigurável,
+aproveitando o fato que essa biblioteca possuí o código fonte disponível tendo sido
+desenvolvida pelo orientador desse trabalho. No entanto, o problema de reconfiguração é
+complexo, principalmente na presença de falhas e assincronia. Sua resolução pode ser
+obtida através de duas estratégias: (1) baseado em transições de visões do conjunto de
+réplicas operacionais \cite{birman87a, birman87b}; (2) definição, via consenso, de uma
+nova configuração a partir da construção de uma barreira que, quando alcançada pelas
+réplicas, faz com que elas abandonem a configuração vigente e ingressem na nova
+configuração definida (caso elas façam parte dela) \cite{lamport10}. Em geral, sistemas de
+replicação ativa não suportam mecanismo de reconfiguração, sendo definidos como grupos de
+processos estáticos \cite{chandra96, lamport98}. Do ponto de vista teórico podemos
+encontrar um tratamento formal do problema \cite{lamport10}, mas sistemas práticos tendem
+a evitar esta questão de forma a simplificar a construção do sistema \cite{chandra07}.
 
-A estratégia de reconfiguração descrita por \cite{lamport10} pode ser bem complexa, ela
-abrange adição e remoção de réplicas, nessa dissertação estamos focados em um sub-conjunto
-desse problema onde apenas novas réplicas com estado inicial vazio são adicionadas
-consequentemente não precisamos de uma política para tratar réplicas com estado. A nossa
-proposta está fundamentada na utilização de \emph{réplicas leitoras}, que são capazes de
-atender a todas as requisições da aplicação sem, no entanto, requerer acesso à memória
-persistente e sem, na prática, participarem ativamente das operações custosas do algoritmo
-Paxos. Identificamos a necessidade da criação de um mecanismo eficiente para
-\emph{transferência de estado} entre réplicas. Estamos preocupados com o impacto inerente
-para implantar uma nova réplica em um aglomerado em tempo de execução. Tal impacto
-dificulta a viabilidade das técnicas de autogestão, porque dependendo do cenário,
-adicionar uma nova réplica pode comprometer o desempenho de um sistema sobrecarregado
-\cite{vilaca09}. Esse trabalho apresenta duas novas funcionalidades para expansão da
-biblioteca Treplica:
+Nessa dissertação propomos uma forma diferente de simplificar a reconfiguração
+considerando apenas um sub-conjunto desse problema: a adição de réplicas sem memória
+persistente. A nossa proposta está fundamentada na utilização de \emph{réplicas leitoras},
+que são capazes de atender a todas as requisições da aplicação sem, no entanto, requerer
+acesso à memória persistente e sem, na prática, participarem ativamente das operações
+custosas do algoritmo Paxos. Identificamos a necessidade da criação de um mecanismo
+eficiente para \emph{transferência de estado} entre réplicas. Estamos preocupados com o
+impacto inerente para implantar uma nova réplica em um aglomerado em tempo de execução.
+Tal impacto dificulta a viabilidade das técnicas de autogestão, porque dependendo do
+cenário, adicionar uma nova réplica pode comprometer o desempenho de um sistema
+sobrecarregado \cite{vilaca09}.
+
+Esse trabalho apresenta duas novas funcionalidades para expansão da biblioteca Treplica:
 
 \begin{enumerate}
   \item Mecanismo de transferência de estado: criação de um protocolo eficiente para
@@ -94,10 +88,21 @@ biblioteca Treplica:
     processo de decisão de instâncias de consenso.
 \end{enumerate}
 
-O restante dessa dissertação se encontra organizada da seguinte forma: O Capítulo 1
-introduz a estratégia de replicação ativa para tolerância a falhas, o modelo computacional
-utilizado e descreve o algoritmo Paxos e a biblioteca Treplica. Já o Capítulo 2 expõe em
-detalhes a ideia de reconfiguração em Treplica e os componentes necessários para execução
-de tal tarefa. O Capítulo 3 apresenta e discute os resultados. Por fim, a Conclusão
-explicita conclusões e trabalhos futuros.
+Implementamos e validamos experimentalmente a nossa proposta obtendo resultados de
+pesquisa interessantes. Observamos que o mecanismo de transferência de estado minimizou o
+impacto para adição de uma nova réplica no aglomerado. Embora os experimentos
+transferência utilizem réplicas leitoras, podemos alcançar o mesmo desempenho com réplicas
+tradicionais desde que não seja necessário uma replicação total. O mecanismo proposto é
+genérico o suficiente para suportar todos os tipos de réplicas de Tréplica: réplicas
+votantes e leitoras. Pudemos também constatar que o uso de réplicas leitoras permitiu a
+expansão do aglomerado experimental de forma simples conseguindo evitar a difícil tarefa
+de reconfiguração total, porém sem um grande ganho de desempenho. Mesmo assim, acreditamos
+termos construído mecanismos úteis para sistemas de replicação ativa.
+
+O restante dessa dissertação está organizada da seguinte forma: O Capítulo 1 introduz a
+estratégia de replicação ativa para tolerância a falhas, o modelo computacional utilizado
+e descreve o algoritmo Paxos e a biblioteca Treplica. Já o Capítulo 2 expõe em detalhes a
+ideia de reconfiguração em Treplica e os componentes necessários para execução de tal
+tarefa. O Capítulo 3 apresenta e discute os resultados. Por fim, a Conclusão explicita
+conclusões e trabalhos futuros.
 

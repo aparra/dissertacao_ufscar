@@ -215,11 +215,11 @@ de replicação de processos: a \emph{replicação ativa} e a \emph{replicação
 transparente para o cliente, na ativa a escrita é garantida nas réplicas e na passiva a
 escrita ocorrerá mais cedo ou mais tarde (futura).
 
-Na replicação ativa \cite{coulouris11, guerraoui97} ou replicação por máquina de estados
-\cite{schneider90}, os processos replicados funcionam como máquinas de estado
-deterministas, ou seja, o estado atual é determinado única e exclusivamente por um estado
-inicial e uma sequência de transições. Desta forma, se os processos replicados recebem a
-mesma sequência de transições eles atingirão estados idênticos.
+Os processos na replicação ativa \cite{coulouris11, guerraoui97} ou replicação por máquina
+de estados \cite{schneider90}, funcionam como máquinas de estado deterministas, ou seja, o
+estado atual é determinado única e exclusivamente por um estado inicial e uma sequência de
+transições. Desta forma, se os processos replicados recebem a mesma sequência de
+transições eles atingirão estados idênticos.
 
 Cada operação que altera o estado de uma réplica (requisição de escrita) é executada de
 maneira determinista no conjunto de réplicas, ou seja, todas as réplicas recebem e
@@ -465,8 +465,8 @@ memória persistente.
 \section{Treplica}\label{sec:treplica}
 
 Treplica se situa a meio caminho entre flexibilidade de baixo nível de um sistema de
-comunicação em grupo \cite{birman93} baseado em sincronia virtual \cite{friedman96,
-birman05} e os vastos recursos de processamento de dados de um SGBD. A principal
+comunicação em grupo \cite{birman93} baseado em sincronia virtual \cite{birman05,
+friedman96} e os vastos recursos de processamento de dados de um SGBD. A principal
 característica de Treplica é a ideia de se apresentar ao programador como uma abstração de
 programação unificada para replicação e persistência, propondo o uso de consenso
 \cite{barborak93} como a fundação para a construção dessa ferramenta.

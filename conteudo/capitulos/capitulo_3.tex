@@ -18,7 +18,7 @@ para enriquecimento do conteúdo e possível utilização em trabalhos futuros.
 
 \begin{enumerate}
   \item Se possuirmos um mecanismo de transferência eficiente, podemos recuperar o estado
-    de uma réplica de forma mais rápida do que se fôssemos rexecutar todo o histórico de
+    de uma réplica de forma mais rápida do que se fôssemos reexecutar todo o histórico de
     operações perdidas por essa réplica.
   \item Se adicionarmos uma réplica de forma a evitar uma reconfiguração total do sistema,
     ganharemos a flexibilidade para expansão do aglomerado de acordo com a demanda de
@@ -33,7 +33,7 @@ proporciona o cenário, que acreditamos ser o mais adequado, para execução efi
 utilizando réplicas leitoras.
 
 \begin{enumerate}
-  \item Experimento para transferência de estado: criamos um cenário onde uma nova rélica
+  \item Experimento para transferência de estado: criamos um cenário onde uma nova réplica
     leitora é adicionada no aglomerado. Dessa forma o protocolo de transferência de estado
     é acionado. Para criar uma base de comparação, repetimos o experimento adicionando uma
     réplica votante exigindo a atuação do mecanismo de retransmissão de instância de
@@ -51,7 +51,8 @@ aplicação e as bibliotecas utilizadas para sua concepção. Em seguida, na
 dos experimentos. A \autoref{sec:experimento_tranferencia_estado} e
 \autoref{sec:experimento_replicas_leitoras} apresentam, respectivamente, os experimentos de
 transferência de estado e de réplicas leitoras com seus respectivos resultados e análise.
-Encerramos o capitulo com a \autoref{sec:conclusao} apresentando as considerações finais.
+Encerramos o capítulo com uma breve descrição de um problema de conflitos de instâncias
+encontrado durante a análise experimental na \autoref{sec:problema_conflitos}.
 
 
 \section{Aplicação}\label{sec:aplicacao}
@@ -131,7 +132,7 @@ responsabilidade que a biblioteca exerce no projeto.
 }{
   \nota{Vraptor: \url{http://vraptor3.vraptor.org}}
   \nota{Model-View-Controller, é um padrão de projeto de software que separa a
-  representação da informação da iteração do usuário \cite{alguem}}
+  representação da informação da iteração do usuário}
 }{}
 \end{table}
 
@@ -218,10 +219,10 @@ mensagens que requisições de leitura.
 
 Para execução de todos os experimentos foi gerado uma carga utilizando todas as 5 máquinas
 disponíveis, totalizando uma carga máxima para a aplicação de 5000 requisições/segundo,
-mantida durante 300 s para cada medida experimental. Para a análise resolvemos considerar
-intervalos diferentes de acordo com o cenário de teste. Tal intervalo, ao qual chamaremos
-de \emph{período de análise}, será identificado em cada análise. Os experimentos foram
-divididas em duas configurações, conforme mostra os dados na
+mantida durante 300 segundos para cada medida experimental. Para a análise resolvemos
+considerar intervalos diferentes de acordo com o cenário de teste. Tal intervalo, ao qual
+chamaremos de \emph{período de análise}, será identificado em cada análise. Os
+experimentos foram divididas em duas configurações, conforme mostra os dados na
 \autoref{tab:configuracao_experimento}.
 
 \begin{table}[htb]
@@ -389,11 +390,11 @@ Os resultados ilustrado pela \autoref{fig:dados_transf_estado} também são exib
   \toprule
                 & Tempo de Transferência & Tamanho do Estado & Tempo de Ativação \\
   \midrule \midrule
-  Média         & 1.832s                 & 140.590Mb          & 2.133s            \\
+  Média         & 1.832s                 & 140.590Mb         & 2.133s            \\
   \midrule
-  Mediana       & 1.867s                 & 141.535Mb          & 2.209s            \\
+  Mediana       & 1.867s                 & 141.535Mb         & 2.209s            \\
   \midrule
-  Desvio Padrão & 0.945                  & 1.934              & 0.631             \\
+  Desvio Padrão & 0.945                  & 1.934             & 0.631             \\
   \bottomrule
 \end{tabular}
 }{
@@ -699,12 +700,29 @@ uma questão: Qual é o desempenho de uma réplica leitora?
 Para responder essa pergunta, vamos comparar a execução das Configurações 1 e 2 no
 Experimento 1 (50\% de requisições de leitura) e Experimento 2 (80\% de requisições de
 leitura), executando dez vezes cada uma das quatro combinações de configuração e
-experimento.
+experimento. A \autoref{fig:analise_final_replica_leitora} ilustra a comparação do número
+médio de requisições atendidas e o tempo de resposta dessas requisições no período de
+análise para os dois experimentos. Fica evidente a semelhança no desempenho das duas
+configurações do aglomerado nesses dois critérios de análise.
 
-A \autoref{fig:analise_final_replica_leitora} ilustra a comparação do número médio de
-requisições atendidas e tempo de resposta dessas requisições medidos no período de análise
-para os dois experimentos. Fica evidente a semelhança no desempenho das duas configurações
-do aglomerado nesses dois critérios.
+No Experimento 1 podemos observar uma pequena vantagem na configuração sem réplicas
+leitoras de 41 operações por segundo, com tempo de resposta 3.09 ms menor. No entanto,
+realizamos um teste-t independente e observamos que essa diferença não é estatisticamente
+significativa (com $p < 0.0001$) para vazão ($t_{(10)}=2,44$, $p = 0,0244$) e para tempo de
+resposta ($t_{(10)}=2.47$, $p = 0.0238$). Esse é um resultado que consideramos positivo
+para as réplicas leitoras, pois conseguem equiparar o desempenho de réplicas votantes e
+possuem a grande vantagem de não precisarem de reconfiguração total quando são adicionadas
+ou removidas de um aglomerado. Essa flexibilidade de redimensionamento proporcionada por
+réplicas leitoras passa a ser um diferencial a ser explorado em Treplica.
+
+No Experimento 2 a configuração com réplicas leitoras teve um desempenho 52.5 operações
+por segundo superior e 2.6 ms superior. Porém, o grande número de leituras desse
+experimento tornam o desempenho bem mais previsível com um pequeno desvio padrão, de forma
+que um teste-t independente mostra que esta pequena diferença é estatisticamente
+significativa para vazão ($t_{(10)}=8.46$, $p < 0.0001$) e para tempo de resposta
+($t_{(10)}=27.25$, $p < 0.0001$). No cenário configurado com muitas leituras, réplicas
+leitoras oferecem um pequeno ganho, que foi constante durante durante as execuções
+experimentais.
 
 \begin{figure}[ht]
   \centering
@@ -715,14 +733,14 @@ do aglomerado nesses dois critérios.
 
 Para maior clareza de comparação, os resultados ilustrado pela
 \autoref{fig:analise_final_replica_leitora} também são exibidos na
-\autoref{tab:adicionando_replica_votante} (aglomerado configurado somente réplicas
-votantes) e na \autoref{tab:adicionando_replica_leitora} (aglomerado configurado com
+\autoref{tab:desempenho_com_replicas_votantes} (aglomerado configurado somente réplicas
+votantes) e na \autoref{tab:desempenho_com_replicas_leitoras} (aglomerado configurado com
 réplicas votantes e leitoras).
 
 \begin{table}[htb]
 \IBGEtab{
-  \caption{Desempenho com réplicas leitoras}
-  \label{tab:desempenho_com_replica_leitora}
+  \caption{Desempenho com réplicas votantes}
+  \label{tab:desempenho_com_replicas_votantes}
 }{
   \begin{tabular}{ccccc}
   \toprule
@@ -739,8 +757,8 @@ réplicas votantes e leitoras).
 
 \begin{table}[htb]
 \IBGEtab{
-  \caption{Desempenho sem réplicas leitoras}
-  \label{tab:desempenho_sem_replica_leitora}
+  \caption{Desempenho com réplicas leitoras}
+  \label{tab:desempenho_com_replicas_leitoras}
 }{
   \begin{tabular}{ccccc}
   \toprule
@@ -755,9 +773,25 @@ réplicas votantes e leitoras).
 }
 \end{table}
 
-Mesmo pequena a diferença é estatisticamente significativa (p=0,002). Esse é mais uma
-resultado positivo para as réplicas as leitoras que conseguem se equiparar o desempenho de
-réplicas votantes e possuem uma grande vantagem: adição/remoção sem necessidade de
-reconfiguração total. Essa flexibilidade no redimensionamento do aglomerado utilizando
-réplicas leitoras passa a ser um diferencial a ser explorado em Treplica.
+
+\section{Conflitos nas instâncias de Paxos}\label{sec:problema_conflitos}
+
+Uma questão interessante levantada pela nossa análise de desempenho é a redução de
+desempenho de acordo com o aumento de requisições de escrita. Embora uma requisição de
+escrita exija mais trocas de mensagens de Paxos entre as réplicas, pudemos notar que esse
+não era a maior razão para a redução de desempenho. Treplica utiliza um mecanismo
+descentralizado para geração de número de rodadas baseado no conhecimento do estado local
+da réplica. Esse mecanismo não determinístico causa problemas de conflito de instâncias
+quando atua dessincronizado no aglomerado.
+
+Observarmos um grande número de conflitos entre processos tentando propor alterações de
+estado diferentes na mesma instância. Quando duas réplicas tentam decidir valores
+diferentes para a mesma instância, apenas uma é decidida e o agente coordenador envia uma
+mensagem para o proponente que gerou conflito aprender o que já foi decidido na instância
+conflitante. Sendo assim, o proponente cria uma nova proposta com um número diferente de
+instância e tenta novamente estabelecer o consenso com a possibilidade de um novo
+conflito. Notamos que conforme o aumento de propostas (ou agentes proponentes), maior é o
+número de conflitos.
+
+Infelizmente a exploração desse problema não faz parte do escopo desse trabalho.
 

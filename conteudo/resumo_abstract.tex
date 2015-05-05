@@ -1,30 +1,65 @@
 %================================= Resumo e Abstract ========================================
-\setlength{\absparsep}{18pt} % ajusta o espaçamento dos paragrafos do resumo 
-                     
-% --- 
-% resumo em português
-% --- 
-\begin{resumo}
-Dissertação (do latim, \emph{disertatio}), é uma modalidade de redação ou tipo de composição, escrita em prosa sobre um tema que se devem apresentar e discutir argumentos, provas, exemplos etc. Nos meios universitários equivale a tese diferenciando-se pelo volume de material, a dissertação seria o material que envolvesse poucas páginas até o limite de cem, enquanto a tese rotularia os textos que ultrapassassem esse número; e pelo aspecto qualitativo, a dissertação pressupõe a capacidade de aplicação de um método de análise e interpretação, enquanto a tese implica a originalidade do tema ou da abordagem à luz do qual é exposta e discutida (fonte: wikipedia).
+\setlength{\absparsep}{18pt} % ajusta o espaçamento dos paragrafos do resumo
 
-\textbf{Palavras-chaves}: Dissertação. Texto. Mestrado.
+% ---
+% resumo em português
+% ---
+\begin{resumo}
+Paxos é um mecanismo de replicação ativa que consege manter um mesmo estado compartilhado
+entre servidores que atendem a requisições de uma aplicação. É incomum encontrar
+apliacações onde a parte principal do processamento acotece através de um algorítimo de
+replicação como Paxos devido ao seu custo em termos do número de mensagens trocadas, o que
+limita a escalabilidade do sistema para algumas poucas réplicas. Acreditamos que seja
+possível utilizar replicação ativa não só como substrato de apoio a coordenação de
+aplicações distribuídas de baixo acoplamento, mas também como base para a construção de
+uma aplicação completa. Um exemplo que permite replicar a aplicação usando replicação
+ativa através do algoritmo Paxos é a biblioteca Treplica que provê uma forma simples e
+orientada a objetos a construção de aplicações altamente confiáveis. Utilizando essa
+biblioteca, a aplicação resultante preserva a consistência de uma aplicação centralizada e
+adiciona a tolerância a falhas de uma aplicação distribuída. Nessa dissertação exploramos
+a questão da reconfiguração em sistemas de replicação ativa. Em particular, cobiçamos
+transformar Treplica em uma biblioteca reconfigurável. Propomos dois novos mecanismos:
+(1) protocolo eficiente para transferência de estado; e (2) adição de novas réplicas sem
+aumentar de forma significativa o custo de manutenção da consistência do sistema como um
+todo. Nossa estratégia utiliza os dois mecanismos para criação de réplicas leitoras, que
+são capazes de atender todas as requisições da aplicação sem no entanto participarem
+ativamente das operações custozas do algoritmo Paxos.
+
+\textbf{Palavras-chaves}: Replicação ativa. Paxos. Reconfiguração. Transferência de
+estado.
 
 \end{resumo}
-% --- 
+% ---
 
 
-% --- 
+% ---
 % resumo em ingl�s
-% --- 
+% ---
 \begin{resumo}[Abstract]
  \begin{otherlanguage*}{english}
 
-A thesis or dissertation is a document submitted in support of candidature for an academic degree or professional qualification presenting the author's research and findings. In some contexts, the word ``thesis'' or a cognate is used for part of a bachelor's or master's course, while ``dissertation'' is normally applied to a doctorate, while in other contexts, the reverse is true. Dissertations and theses may be considered as grey literature. The required complexity and/or quality of research of a thesis or dissertation can vary by country, university and/or program, therefore, the required minimum study period may vary highly significant in duration. The word dissertation can at times be used to describe a treatise without relation to obtaining an academic degree. The term thesis is also used to refer to the general claim of an essay or similar work (Source: wikipedia).
+Paxos is an active replication algorithm that keeps the same shared state consistently
+among servers that handle requests from an application. It is unusual to find applications
+where the main processing happens through a replication algorithm such as Paxos, mostly
+due to the high number of exchanged messages required to keep the state consistent. This
+restricts the system scalability to a handful of replicas. We believe that is possible to use
+active replication not only as a low level support to loosely coupled distributed
+applications, but as a framework to fully replicated applications. An example that
+provides replicated application using active replication through Paxos is the Treplica
+library that provides a simple and object-oriented way to build highly reliable
+applications. Using this library, the application preserves the consistency of a
+centralized implementation and it adds fault tolerance of a distributed application. In
+this paper we explored reconfiguration on systems that use active replication. We proposed
+two mechanisms: (1) efficient protocolo to state transfer; and (2) incorporation of new
+replicas in the system with no significant increasing in the cost to keep the whole system
+consistent. Our approach uses both mechanisms to create reader replicas, capable to answer
+all application requests without taking an active part in the costly operations of the
+Paxos algorithm.
 
-\textbf{Key-words}: Dissertation. Text. Master.
+\textbf{Key-words}: Active replication. Paxos. Reconfiguration. State transfer.
 
  \end{otherlanguage*}
 \end{resumo}
-% --- 
+% ---
 
 %===========================================================================================

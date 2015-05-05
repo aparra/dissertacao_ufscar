@@ -1,7 +1,7 @@
 % ------------------------------------------------------------------------
 % ------------------------------------------------------------------------
 % abnTeX2: Modelo de Trabalho Academico (tese de doutorado, dissertacao de
-% mestrado e trabalhos monograficos em geral) em conformidade com 
+% mestrado e trabalhos monograficos em geral) em conformidade com
 % ABNT NBR 14724:2011: Informacao e documentacao - Trabalhos academicos -
 % Apresentacao
 % ------------------------------------------------------------------------
@@ -10,7 +10,7 @@
 % ------------------------------------------------------------------------
 % ------------------------------------------------------------------------
 % abnTeX2: Modelo de Trabalho Academico (tese de doutorado, dissertacao de
-% mestrado e trabalhos monograficos em geral) em conformidade com 
+% mestrado e trabalhos monograficos em geral) em conformidade com
 % ABNT NBR 14724:2011: Informacao e documentacao - Trabalhos academicos -
 % Apresentacao
 % ------------------------------------------------------------------------
@@ -21,7 +21,7 @@
 	12pt,				% tamanho da fonte
 	openright,			% capítulos começam em pág ímpar (insere página vazia caso preciso)
 	twoside,			% para impressão em verso e anverso. Oposto a oneside
-	a4paper,			% tamanho do papel. 
+	a4paper,			% tamanho do papel.
 	% -- opções da classe abntex2 --
 	%chapter=TITLE,		% títulos de capítulos convertidos em letras maiúsculas
 	%section=TITLE,		% títulos de seções convertidos em letras maiúsculas
@@ -35,9 +35,9 @@
 	]{abntex2}
 
 	% ---
-	% Pacotes básicos 
+	% Pacotes básicos
 	% ---
-	\usepackage{lmodern}			% Usa a fonte Latin Modern			
+	\usepackage{lmodern}			% Usa a fonte Latin Modern
 	\usepackage[T1]{fontenc}		% Selecao de codigos de fonte.
 	\usepackage[utf8]{inputenc}		% Codificacao do documento (conversão automática dos acentos)
 	\usepackage{lastpage}			% Usado pela Ficha catalográfica
@@ -54,9 +54,9 @@
 \usepackage[brazilian,hyperpageref]{backref}	 % Paginas com as citações na bibl
 \usepackage[alf]{abntex2cite}					 % Citações padrão ABNT
 
-% --- 
-% CONFIGURAÇÕES DE PACOTES 
-% --- 
+% ---
+% CONFIGURAÇÕES DE PACOTES
+% ---
 
 % ---
 % Configuracoes do pacote backref
@@ -84,10 +84,10 @@
 % ---
 % Informacoes de dados para CAPA e FOLHA DE ROSTO
 % ---
-\titulo{Coloque aqui o título da dissertação\\Coloque aqui o título da dissertação}
+\titulo{Uma Solução de Reconfiguração Leve para Paxos}
 \autor{Anderson Parra de Paula}
 \local{Sorocaba, SP}
-\data{99 de Mês de 9999}
+\data{05 de Maio de 2015}
 \orientador{Gustavo Maciel Dias Vieira}
 \instituicao{%
   Universidade Federal de São Carlos -- UFSCar
@@ -96,9 +96,12 @@
   \par
   Programa de Pós-Graduação em Ciência da Computação -- PPGCCS}
 \tipotrabalho{Dissertação (Mestrado)}
-% O preambulo deve conter o tipo do trabalho, o objetivo, 
-% o nome da instituicao e a Area de concentracao 
-\preambulo{Dissertação de mestrado apresentada ao Programa de Pós-Graduação em Ciência da Computação (PPGCCS) da Universidade Federal de São Carlos como parte dos requisitos exigidos para a obtenção do título de Mestre em Ciência da Computação. Área de concentração: XXXXXXXXXXXX.}
+% O preambulo deve conter o tipo do trabalho, o objetivo,
+% o nome da instituicao e a Area de concentracao
+\preambulo{Dissertação de mestrado apresentada ao Programa de Pós-Graduação em Ciência da
+Computação (PPGCCS) da Universidade Federal de São Carlos como parte dos requisitos
+exigidos para a obtenção do título de Mestre em Ciência da Computação. Área de
+concentração: replicação ativa.}
 % ---
 
 
@@ -112,24 +115,24 @@
 \makeatletter
 \hypersetup{
      	%pagebackref=true,
-		pdftitle={\@title}, 
-		pdfauthor={\@author},
+		  pdftitle={\@title},
+		  pdfauthor={\@author},
     	pdfsubject={\imprimirpreambulo},
 	    pdfcreator={LaTeX with abnTeX2},
-		pdfkeywords={abnt}{latex}{abntex}{abntex2}{trabalho acadêmico}, 
-		colorlinks=true,       		% false: boxed links; true: colored links
+		  pdfkeywords={abnt}{latex}{abntex}{abntex2}{trabalho acadêmico},
+		  colorlinks=true,       		% false: boxed links; true: colored links
     	linkcolor=blue,          	% color of internal links
     	citecolor=blue,        		% color of links to bibliography
-    	filecolor=magenta,      		% color of file links
-		urlcolor=blue,
-		bookmarksdepth=4
+    	filecolor=magenta,      	% color of file links
+		  urlcolor=blue,
+		  bookmarksdepth=4
 }
 \makeatother
-% --- 
+% ---
 
-% --- 
-% Espacamentos entre linhas e paragrafos 
-% --- 
+% ---
+% Espacamentos entre linhas e paragrafos
+% ---
 
 % O tamanho do paragrafo é dado por:
 \setlength{\parindent}{1.3cm}
@@ -247,7 +250,7 @@
 \include{conteudo/capitulos/capitulo_3}
 \include{conteudo/capitulos/capitulo_4}
 \include{conteudo/capitulos/conclusao}
-% ---------------------------------------------------------- 
+% ----------------------------------------------------------
 
 % ----------------------------------------------------------
 % ELEMENTOS POS-TEXTUAIS
@@ -276,11 +279,11 @@
 % ---
 % Inicia os apendices
 % ---
-\begin{apendicesenv}
+%\begin{apendicesenv}
 
-\include{conteudo/capitulos/apendice1}
+%\include{conteudo/capitulos/apendice1}
 
-\end{apendicesenv}
+%\end{apendicesenv}
 % ---
 
 % ----------------------------------------------------------
@@ -290,12 +293,12 @@
 % ---
 % Inicia os anexos
 % ---
-\begin{anexosenv}
+%\begin{anexosenv}
 
-\include{conteudo/capitulos/anexo1}
+%\include{conteudo/capitulos/anexo1}
 
-\end{anexosenv}
-% --- 
+%\end{anexosenv}
+% ---
 
 %---------------------------------------------------------------------
 % INDICE REMISSIVO
